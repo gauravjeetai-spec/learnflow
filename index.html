@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <title>LearnFlow — Learning operating system</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+        <div class="workspace-switcher"><div class="workspace-avatar">G</div><div><strong>Growth & Business</strong><small>Personal workspace</small></div><span class="chevron">⌄</span></div>
+        <nav class="primary-nav">
+          <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
+          <button class="nav-item" data-view="board"><span class="nav-icon">▦</span>Learning Board</button>
+          <button class="nav-item" data-view="goals"><span class="nav-icon">◎</span>Goals <em>4</em></button>
+          <button class="nav-item" data-view="skills"><span class="nav-icon">◇</span>Skills</button>
+          <button class="nav-item" data-view="sprints"><span class="nav-icon">◷</span>Sprints</button>
+          <button class="nav-item" data-view="courses"><span class="nav-icon">▤</span>Courses</button>
+          <button class="nav-item" data-view="activity"><span class="nav-icon">↗</span>Activity</button>
+          <button class="nav-item" data-view="analytics"><span class="nav-icon">▥</span>Analytics</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-label">YOUR WORKSPACE</div>
+          <button class="nav-item secondary"><span class="nav-icon">▱</span>Shared with me</button>
+          <button class="nav-item secondary"><span class="nav-icon">⚙</span>Settings</button>
+          <div class="user-card"><div class="avatar avatar-blue">J</div><div><strong>Jeet Sharma</strong><small>Member</small></div><span class="more">···</span></div>
+        </div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar">
+          <div class="mobile-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+          <div class="breadcrumbs"><span>Growth & Business</span><span class="slash">/</span><strong id="breadcrumb-current">Overview</strong></div>
+          <div class="top-actions"><button class="search-trigger" id="search-trigger"><span>⌕</span><span>Search anything</span><kbd>⌘ K</kbd></button><button class="icon-button" id="theme-toggle" aria-label="Toggle dark mode">☾</button><button class="share-button">⇧ <span>Share</span></button><div class="avatar avatar-blue">J</div></div>
+        </header>
+        <div id="view-container"></div>
+      </main>
+    </div>
+    <div class="mobile-nav"><button class="active" data-view="overview"><span>⌂</span>Home</button><button data-view="board"><span>▦</span>Board</button><button data-view="goals"><span>◎</span>Goals</button><button data-view="activity"><span>↗</span>Activity</button></div>
+    <div class="modal-backdrop" id="modal-backdrop"><div class="modal" id="modal"></div></div>
+    <div class="toast" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
