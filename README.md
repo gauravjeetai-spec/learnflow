@@ -42,11 +42,16 @@ This README is the canonical project record for LearnFlow's implemented architec
 - Row Level Security is enabled. Authenticated users can only read, insert, update, or delete their own resources.
 - `updated_at` is maintained automatically by a database trigger.
 - The applied schema is also committed to `supabase/migrations/20261002_create_resources_table.sql` so the repository remains the source-controlled record of the database change.
-- Current row count after schema creation: 0. Existing demo resources are still frontend/localStorage data and have **not** been migrated yet.
+- Current row count after schema creation: 0. Existing demo resources are still frontend/localStorage data and have **not** been migrated.
+- The frontend now imports the shared Supabase client and loads `public.resources` for authenticated users.
+- The existing Add Learning flow now inserts/upserts into `public.resources` for authenticated users; guest mode continues to use localStorage/demo data.
+- Progress updates, completion, and logged learning activity now persist resource changes through the same Supabase resource service when authenticated.
+- LearnFlow now exposes a simple email magic-link Log in / Log out control using Supabase Auth. The browser session is persisted by the Supabase client.
+- The app JavaScript has been syntax-validated after the persistence integration.
 
 ### Next milestone
 
-Connect the existing LearnFlow resource loader and **Add Learning** flow to `public.resources`, then verify: **create resource → refresh browser → resource remains available**. After that, implement edit/update/delete and activity persistence.
+Complete the end-to-end browser verification with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
 
 ## Architecture direction
 
