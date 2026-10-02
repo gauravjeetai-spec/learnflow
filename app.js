@@ -1,4 +1,6 @@
-import { supa } from './supabase-client.js';
+let supa=null;
+const SUPABASE_URL='https://zltqnsylerhcbnslqcqm.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsdHFuc2lsZXJoY2Juc2xxY3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4OTUyNDAsImV4cCI6MjEwNTQ3MTI0MH0.dmMVf1ZFdBsvHtD2vfZRcKSqyjqsSkAwqlDUB5aUzZk';
 
 const demoResources = [
   {id:1,title:'Financial Modeling for Entrepreneurs',type:'Course',provider:'Udemy',goal:'Build Business Acumen',skills:['Financial Modeling','Business Strategy'],status:'In Progress',progress:78,priority:'High',due:'Sep 27',hours:'15.6 / 20h',column:'in-progress',owner:'J',color:'blue',activity:[['Sep 20','Study · 1h'],['Sep 19','Practice · 45m'],['Sep 18','Watch · 1h 20m']]},
@@ -22,13 +24,13 @@ function toUiResource(r){
   return {...r,column,status:column==='completed'?'Completed':column==='in-progress'?'In Progress':column==='practice'?'Practice / Review':column==='planned'?'Planned':'Backlog',due:r.due_date||'Not scheduled',owner:user?.email?.slice(0,1).toUpperCase()||'J',color:'blue',hours:r.estimated_hours?('0 / '+r.estimated_hours+'h'):'0 / —',activity:[]};
 }
 async function loadResources(){
-  if(!user){resources=JSON.parse(localStorage.getItem('learnflow-resources')||'null')||demoResources;return}
+  if(!user||!supa){resources=JSON.parse(localStorage.getItem('learnflow-resources')||'null')||demoResources;return}
   const {data,error}=await supa.from('resources').select('*').order('created_at',{ascending:false});
   if(error){console.error(error);toast('Could not load saved learning resources');return}
   resources=(data||[]).map(toUiResource);
 }
 async function persistResource(r){
-  if(!user){save();return true}
+  if(!user||!supa){save();return true}
   const payload={title:r.title,type:r.type,provider:r.provider||'Independent',goal:r.goal||null,skills:r.skills||[],status:r.column||'backlog',progress:r.progress||0,priority:r.priority||'Medium',due_date:r.due&&r.due!=='Not scheduled'?r.due:null,estimated_hours:r.estimated_hours??null,notes:r.notes||null,owner_label:user.email?.split('@')[0]||null};
   if(typeof r.id==='string')payload.id=r.id;
   const {data,error}=await supa.from('resources').upsert(payload).select().single();
@@ -36,12 +38,22 @@ async function persistResource(r){
   Object.assign(r,toUiResource(data));return true;
 }
 async function initSupabase(){
-  const {data,error}=await supa.auth.getUser();
-  if(!error)user=data.user||null;
-  updateAuthButton();
-  await loadResources();
   render();
-  supa.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;updateAuthButton();await loadResources();render()});
+  try{
+    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+    supa=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const {data,error}=await supa.auth.getUser();
+    if(!error)user=data.user||null;
+    updateAuthButton();
+    await loadResources();
+    render();
+    supa.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;updateAuthButton();await loadResources();render()});
+  }catch(error){
+    console.error('Supabase initialization failed:',error);
+    user=null;
+    updateAuthButton();
+    toast('LearnFlow is running in offline demo mode');
+  }
 }
 function updateAuthButton(){const b=document.getElementById('auth-button');if(b)b.textContent=user?'Log out':'Log in';}
 async function authAction(){
