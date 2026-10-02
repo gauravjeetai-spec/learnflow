@@ -17,7 +17,7 @@ export const supa = createClient(
 let resources=[]; let currentView='overview'; let searchTerm=''; let activeFilter='All';
 let user = null;
 const root=document.getElementById('view-container'); const modalBackdrop=document.getElementById('modal-backdrop'); const modal=document.getElementById('modal');
-supa.auth.getUser().then(({data: {user}, error})=>{if(!error&&user){user=user;loadResources().then(render)}}).catch(console.error);
+supa.auth.getUser().then(({data: {user: currentUser}, error})=>{if(!error&&currentUser){user=currentUser;loadResources().then(render)}else{loadResources().then(render)}}).catch(console.error);
 supa.auth.onAuthStateChange((event, session)=>{user=session?.user||null;loadResources().then(render)});
 function save(){localStorage.setItem('learnflow-resources',JSON.stringify(resources)); saveToSupa()}
 async function saveToSupa(){try{await supa.from('resources').upsert(resources)}catch(e){console.error('Supa save error',e)}}
