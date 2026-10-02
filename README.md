@@ -140,3 +140,12 @@ npx netlify-cli deploy --dir learnflow
 - Each user sees only their own resources (owner-filtered)
 - Demo data available if user is not logged in
 - Realtime collaboration coming in future updates
+
+## Latest verification: authentication key fix (October 2026)
+
+- Browser testing reached Supabase Auth successfully, but the login request was rejected with **401 UNAUTHORIZED_INVALID_API_KEY**.
+- The app was using the legacy anon key for the Supabase client.
+- LearnFlow now uses the project's current **publishable key** in both `app.js` and `supabase-client.js`.
+- Next verification step: deploy this commit, click **Log in**, enter the email address, and confirm that Supabase accepts the request and sends the magic-link email.
+- If the request is accepted but no email arrives, the next check is Supabase Auth email delivery/SMTP configuration.
+
