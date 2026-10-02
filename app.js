@@ -18,7 +18,7 @@ let resources=[]; let currentView='overview'; let searchTerm=''; let activeFilte
 let user = null;
 const root=document.getElementById('view-container'); const modalBackdrop=document.getElementById('modal-backdrop'); const modal=document.getElementById('modal');
 supa.auth.getUser().then(({data: {user}, error})=>{if(!error&&user){user=user;loadResources().then(render)}}).catch(console.error);
-supa.auth.onAuthStateChanged((user)=>{this.user=user;loadResources().then(render)});
+supa.auth.onAuthStateChange((event, session)=>{user=session?.user||null;loadResources().then(render)});
 function save(){localStorage.setItem('learnflow-resources',JSON.stringify(resources)); saveToSupa()}
 async function saveToSupa(){try{await supa.from('resources').upsert(resources)}catch(e){console.error('Supa save error',e)}}
 async function loadResources(){const {data,error}=await supa.from('resources').select('*');if(!error&&data){resources=data.filter(r=>!user||r.owner===user.email?.split('@')[0]||r.owner===user.id||true)}else{resources=demoResources;save();}}
