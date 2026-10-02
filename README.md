@@ -57,9 +57,24 @@ This README is the canonical project record for LearnFlow's implemented architec
 - The Supabase client is created at runtime with the existing browser-safe anon key; no service-role credential is used.
 - `app.js` syntax was revalidated after this change.
 
+### Verified milestone — 2026-10-03
+
+**Role-based access control is now implemented with Admin, Mentor, and Learner roles.**
+
+- Added `public.profiles` with role and access status fields.
+- Roles are constrained to `admin`, `mentor`, and `learner`.
+- Access states are `pending`, `active`, `suspended`, and `rejected`.
+- New Supabase Auth users automatically receive a pending Learner profile.
+- The existing owner account has been initialized as the active Admin account.
+- Added an Admin-only **User access** screen to approve users and assign/change roles.
+- Pending, rejected, and suspended users are blocked from the learning workspace until access is active.
+- Supabase RLS now enforces active access for resource reads/writes; Admins can access resources across users.
+- Role and access decisions are enforced in the database, not only hidden in the browser UI.
+- Migration files: `supabase/migrations/20261003_add_user_roles_and_access.sql` and `supabase/migrations/20261003_enforce_resource_access_status.sql`.
+
 ### Next milestone
 
-Complete the end-to-end browser verification with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
+Complete the end-to-end browser verification with the Admin account: **Log in → open User access → confirm Admin role → create a second test user → approve it as Learner or Mentor → verify the pending/approved access flow**. Then return to authenticated resource persistence testing. with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
 
 ## Architecture direction
 
@@ -100,20 +115,21 @@ For the current static MVP, deploy the `learnflow` directory to any static host.
 This app now supports **multiple users** logging in with Supabase Authentication.
 
 ### 1. Enable Auth in Supabase
-1. Go to https://supabase.com/dashboard/project/zltqnsylerhcbnslqcqm/Authentication
-2. Under "Settings", enable **Email password** provider
-3. Add your domain to "Allowed origins" (e.g., `localhost` and your deployed URL)
-4. Set "Site URL" to your deployed URL
+1. Open the Supabase Authentication settings.
+2. LearnFlow currently uses **email magic-link authentication**.
+3. Add your local and deployed URLs to the allowed redirect/origin settings as required by Supabase.
+4. Set the Site URL to the deployed LearnFlow URL.
 
 ### 2. Run the SQL Tables
 Go to https://supabase.com/dashboard/project/zltqnsylerhcbnslqcqm/SQL and run the commands in the "Supabase Tables" section above.
 
 ### 3. How It Works
-- Users visit the URL and click **"Log in"** (top right button)
-- They can sign up with email/password or continue as guest
-- Each user's resources are filtered by their `auth.users.id`
-- Data persists to Supabase and is visible only to the logged-in user
-- Dark mode and preferences persist via localStorage
+- Users visit the URL and click **"Log in"** (top right button).
+- Supabase sends a magic link to the user's email.
+- New users are created as **pending Learners** and cannot use the workspace until an Admin approves them.
+- Admins can approve/reject/suspend users and assign **Admin, Mentor, or Learner** roles from the User access screen.
+- Each user's resources are filtered by their `auth.users.id`; Admins can access resources across users.
+- Database Row Level Security enforces the access rules.
 
 ### 4. Login/Logout UI
 - **Log in button**: Top right corner (☾ icon) - opens SupAuth flow
@@ -136,10 +152,11 @@ npx netlify-cli deploy --dir learnflow
 ```
 
 ### 5. Known Limitations (Updated)
-- Authentication is email/password via Supabase (no Google/Apple SSO yet)
-- Each user sees only their own resources (owner-filtered)
-- Demo data available if user is not logged in
-- Realtime collaboration coming in future updates
+- Authentication is email magic-link via Supabase (no Google/Apple SSO yet).
+- Mentor permissions are currently the same as an active learner; mentor-specific learner assignment/management is a later milestone.
+- Admins have cross-user resource access; finer-grained workspace permissions are a later milestone.
+- Demo data is available for guests; authenticated users use Supabase data.
+- Realtime collaboration is a future milestone.
 
 ## Latest verification: authentication key fix (October 2026)
 
