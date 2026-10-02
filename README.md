@@ -25,6 +25,29 @@ Open `http://localhost:4173` in a browser.
 - Dark mode preference persistence
 - Demo board: 2026 Growth & Business Learning
 
+
+## Build status / source of truth
+
+This README is the canonical project record for LearnFlow's implemented architecture and verified progress. After each meaningful, working milestone, update this section and the relevant architecture notes before moving to the next feature.
+
+### Verified milestone — 2026-10-02
+
+**Resource persistence foundation is now created in Supabase.**
+
+- Supabase project: `learnflow-mvp` (Mumbai / `ap-south-1`)
+- Created `public.resources` with a UUID primary key and authenticated `user_id` ownership.
+- Resource fields currently include title, type, provider, URL, goal, skills, status, progress, priority, due date, estimated hours, notes, owner label, and timestamps.
+- Status values: `backlog`, `planned`, `in-progress`, `practice`, `completed`.
+- Progress is constrained to 0–100; priority is constrained to Low / Medium / High.
+- Row Level Security is enabled. Authenticated users can only read, insert, update, or delete their own resources.
+- `updated_at` is maintained automatically by a database trigger.
+- The applied schema is also committed to `supabase/migrations/20261002_create_resources_table.sql` so the repository remains the source-controlled record of the database change.
+- Current row count after schema creation: 0. Existing demo resources are still frontend/localStorage data and have **not** been migrated yet.
+
+### Next milestone
+
+Connect the existing LearnFlow resource loader and **Add Learning** flow to `public.resources`, then verify: **create resource → refresh browser → resource remains available**. After that, implement edit/update/delete and activity persistence.
+
 ## Architecture direction
 
 The UI is intentionally organized around the LearnFlow relationship:
