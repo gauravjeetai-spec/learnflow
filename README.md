@@ -49,6 +49,14 @@ This README is the canonical project record for LearnFlow's implemented architec
 - LearnFlow now exposes a simple email magic-link Log in / Log out control using Supabase Auth. The browser session is persisted by the Supabase client.
 - The app JavaScript has been syntax-validated after the persistence integration.
 
+### Verified milestone — 2026-10-02 (startup regression hardening)
+
+- Supabase initialization was moved behind an asynchronous startup boundary so a CDN/module loading problem cannot prevent the LearnFlow UI from rendering.
+- The app now renders the demo/guest experience first, then attempts Supabase initialization.
+- If Supabase initialization fails, LearnFlow remains usable in offline demo mode and reports the fallback instead of showing a blank screen.
+- The Supabase client is created at runtime with the existing browser-safe anon key; no service-role credential is used.
+- `app.js` syntax was revalidated after this change.
+
 ### Next milestone
 
 Complete the end-to-end browser verification with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
