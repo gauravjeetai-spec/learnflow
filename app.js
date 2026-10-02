@@ -1,6 +1,6 @@
 let supa=null;
 const SUPABASE_URL='https://zltqnsylerhcbnslqcqm.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsdHFuc2lsZXJoY2Juc2xxY3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4OTUyNDAsImV4cCI6MjEwNTQ3MTI0MH0.dmMVf1ZFdBsvHtD2vfZRcKSqyjqsSkAwqlDUB5aUzZk';
+const SUPABASE_ANON_KEY='sb_publishable_rwWi8lxqY2rHQvTmfBr0qw_BO_gNh9J';
 
 const demoResources = [
   {id:1,title:'Financial Modeling for Entrepreneurs',type:'Course',provider:'Udemy',goal:'Build Business Acumen',skills:['Financial Modeling','Business Strategy'],status:'In Progress',progress:78,priority:'High',due:'Sep 27',hours:'15.6 / 20h',column:'in-progress',owner:'J',color:'blue',activity:[['Sep 20','Study · 1h'],['Sep 19','Practice · 45m'],['Sep 18','Watch · 1h 20m']]},
