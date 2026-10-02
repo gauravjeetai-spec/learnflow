@@ -82,7 +82,8 @@ async function refreshSessionState(){
   await loadProfiles();
   updateAuthButton();
   updateRoleUI();
-  if(profile?.access_status==='active')await loadResources();
+  if(!user){currentView='overview';await loadResources()}
+  else if(profile?.access_status==='active')await loadResources();
   else resources=[];
   render();
 }
