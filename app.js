@@ -287,13 +287,18 @@ function bindEvents(){
     if(!email)return;
     const button=e.target.querySelector('button[type="submit"]');
     if(button){button.disabled=true;button.textContent='Logging in…'}
-    const {error}=password
+    const result=password
       ?await supa.auth.signInWithPassword({email,password})
       :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
     if(button){button.disabled=false;button.textContent='Log in'}
-    if(error){toast(error.message);return}
-    if(password){toast('Signed in successfully.')}
-    else{toast('Check your email for the LearnFlow login link.')}
+    if(result.error){toast(result.error.message);return}
+    if(password){
+      user=result.data?.user||user;
+      await refreshSessionState();
+      toast('Signed in successfully.');
+    }else{
+      toast('Check your email for the LearnFlow login link.');
+    }
   });
   document.getElementById('magic-link-login')?.addEventListener('click',async()=>{
     const email=String(document.querySelector('#login-form input[name="email"]')?.value||'').trim();
