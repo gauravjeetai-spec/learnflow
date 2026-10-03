@@ -129,20 +129,41 @@ function updateRoleUI(){
 }
 async function authAction(){
   if(user){const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
-  const email=prompt('Enter your LearnFlow email');
-  if(!email)return;
-  const password=prompt('Enter your password. Leave blank to use a magic link.');
-  if(password){
-    const {error}=await supa.auth.signInWithPassword({email,password});
-    toast(error?error.message:'Signed in successfully.');
-    return;
-  }
-  const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
-  toast(error?error.message:'Check your email for the LearnFlow login link.');
+  currentView='login';
+  document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.remove('active'));
+  const breadcrumb=document.getElementById('breadcrumb-current');
+  if(breadcrumb)breadcrumb.textContent='Log in';
+  render();
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view[0].toUpperCase()+view.slice(1);render()}
 function resourceCard(r){return `<article class="course-card" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${r.goal}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${r.due}</span><span class="avatar-stack"><span class="avatar avatar-${r.color}">${r.owner}</span></span></div></article>`}
+function loginView(){
+  return `<div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+      <div class="eyebrow">Welcome back</div>
+      <h1>Log in to LearnFlow</h1>
+      <p class="auth-copy">Continue your learning workspace and pick up where you left off.</p>
+      <form id="login-form">
+        <div class="field">
+          <label>Email</label>
+          <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <label>Password <span class="auth-optional">optional</span></label>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Enter your password">
+        </div>
+        <button class="primary-button auth-submit" type="submit">Log in</button>
+      </form>
+      <div class="auth-divider"><span>or</span></div>
+      <button class="secondary-button auth-link-button" id="magic-link-login" type="button">Send me a magic link</button>
+      <button class="auth-back" id="back-to-demo" type="button">← Back to LearnFlow</button>
+      <p class="auth-help">Use your password for immediate sign-in, or request a magic link by email.</p>
+    </div>
+  </div>`;
+}
+
 function accessGate(){
   const status=profile?.access_status;
   const title=status==='pending'?'Access pending':status==='rejected'?'Access not approved':'Access suspended';
@@ -170,7 +191,7 @@ function activity(){return `<div class="page"><div class="page-heading"><div><di
 function analytics(){const total=resources.length,completed=resources.filter(r=>r.progress===100).length,inProgress=resources.filter(r=>r.column==='in-progress').length,progress=total?Math.round(resources.reduce((a,r)=>a+r.progress,0)/total):0;const totalMinutes=activitiesData.reduce((a,x)=>a+Number(x.duration_minutes||0),0);const activeDays=new Set(activitiesData.map(x=>new Date(x.occurred_at).toISOString().slice(0,10))).size;const byGoal=goalsData.map(g=>{const rs=resources.filter(r=>r.goal===g.title);return [g.title,rs.length?Math.round(rs.reduce((a,r)=>a+r.progress,0)/rs.length):0]});return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Make progress visible</div><h1>Analytics</h1><p>Understand how your learning is moving, not just where it is.</p></div></div><div class="metric-grid"><div class="metric-card"><span class="stat-label">Overall progress</span><strong>${progress}%</strong><span class="stat-meta">${total} resources</span></div><div class="metric-card"><span class="stat-label">Completion rate</span><strong>${total?Math.round(completed/total*100):0}%</strong><span class="stat-meta">${completed} of ${total} resources</span></div><div class="metric-card"><span class="stat-label">Learning time</span><strong>${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</strong><span class="stat-meta">Logged activity</span></div><div class="metric-card"><span class="stat-label">Active learning days</span><strong>${activeDays}</strong><span class="stat-meta">Recorded sessions</span></div></div><div class="analytics-grid" style="margin-top:13px"><section class="panel"><div class="panel-header"><h3>Resource status</h3><span class="panel-link">${total} total</span></div><div class="mini-stats" style="justify-content:center;margin:30px 0"><div><strong>${completed}</strong><span>completed</span></div><div><strong>${inProgress}</strong><span>in progress</span></div><div><strong>${total-completed-inProgress}</strong><span>other</span></div></div></section><section class="panel"><div class="panel-header"><h3>Learning time</h3><span class="panel-link">All logged activity</span></div><div class="momentum-score"><strong>${(totalMinutes/60).toFixed(1)}h</strong><small>LOGGED</small></div><p class="momentum-copy">Keep logging sessions to build a useful personal learning history.</p></section></div><section class="panel" style="margin-top:13px"><div class="panel-header"><h3>Progress by goal</h3><span class="panel-link">Live from resources</span></div>${byGoal.map(x=>`<div class="progress-row"><span>${esc(x[0])}</span><b>${x[1]}%</b></div><div class="progress-track" style="margin-bottom:12px"><div class="progress-fill" style="width:${x[1]}%"></div></div>`).join('')||'<div class="empty-state">Create goals and resources to see progress here.</div>'}</section></div>`}
 function render(){
   if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,login};
   root.innerHTML=views[currentView]?views[currentView]():overview();
   bindEvents();
 }
@@ -247,6 +268,36 @@ function logActivity(id){const initialId=id??resources[0]?.id;if(!resources.leng
 
 function bindEvents(){
   document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
+  document.getElementById('login-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const email=String(f.get('email')||'').trim();
+    const password=String(f.get('password')||'');
+    if(!email)return;
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Logging in…'}
+    const {error}=password
+      ?await supa.auth.signInWithPassword({email,password})
+      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    if(button){button.disabled=false;button.textContent='Log in'}
+    if(error){toast(error.message);return}
+    if(password){toast('Signed in successfully.')}
+    else{toast('Check your email for the LearnFlow login link.')}
+  });
+  document.getElementById('magic-link-login')?.addEventListener('click',async()=>{
+    const email=String(document.querySelector('#login-form input[name="email"]')?.value||'').trim();
+    if(!email){toast('Enter your email first');document.querySelector('#login-form input[name="email"]')?.focus();return}
+    const button=document.getElementById('magic-link-login');
+    button.disabled=true;button.textContent='Sending…';
+    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    button.disabled=false;button.textContent='Send me a magic link';
+    toast(error?error.message:'Check your email for the LearnFlow login link.');
+  });
+  document.getElementById('back-to-demo')?.addEventListener('click',()=>{
+    currentView='overview';
+    document.getElementById('breadcrumb-current').textContent='Overview';
+    render();
+  });
   document.querySelectorAll('[data-approve-user]').forEach(b=>b.onclick=async()=>{
     const id=b.dataset.approveUser;
     const role=document.querySelector(`[data-role-user="${id}"]`)?.value||'learner';
