@@ -256,3 +256,7 @@ Push changes to the GitHub `main` branch. Vercel deploys the production applicat
 
 ### Guest experience cleanup — implemented
 - Logged-out visitors now see the demo workspace without authenticated-user workspace controls, Shared with me, Settings, or the guest user card.
+
+### Preferred name onboarding — implemented
+
+Users without a saved preferred name are now prompted after login to choose the name LearnFlow should use in greetings and workspace identity. The value is stored in the existing profile display-name field, and new accounts no longer default to the email prefix unless an explicit full name was provided.
