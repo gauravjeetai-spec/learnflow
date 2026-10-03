@@ -53,9 +53,25 @@ create index if not exists activities_user_id_occurred_idx on public.activities(
 create index if not exists resources_sprint_id_idx on public.resources(sprint_id);
 
 alter table public.goals enable row level security;
+drop policy if exists "Users can view their own goals" on public.goals;
+drop policy if exists "Users can create their own goals" on public.goals;
+drop policy if exists "Users can update their own goals" on public.goals;
+drop policy if exists "Users can delete their own goals" on public.goals;
 alter table public.skills enable row level security;
+drop policy if exists "Users can view their own skills" on public.skills;
+drop policy if exists "Users can create their own skills" on public.skills;
+drop policy if exists "Users can update their own skills" on public.skills;
+drop policy if exists "Users can delete their own skills" on public.skills;
 alter table public.sprints enable row level security;
+drop policy if exists "Users can view their own sprints" on public.sprints;
+drop policy if exists "Users can create their own sprints" on public.sprints;
+drop policy if exists "Users can update their own sprints" on public.sprints;
+drop policy if exists "Users can delete their own sprints" on public.sprints;
 alter table public.activities enable row level security;
+drop policy if exists "Users can view their own activities" on public.activities;
+drop policy if exists "Users can create their own activities" on public.activities;
+drop policy if exists "Users can update their own activities" on public.activities;
+drop policy if exists "Users can delete their own activities" on public.activities;
 
 create policy "Users can view their own goals" on public.goals for select using ((user_id=auth.uid() and has_active_access()) or is_admin());
 create policy "Users can create their own goals" on public.goals for insert with check ((user_id=auth.uid() and has_active_access()) or is_admin());
