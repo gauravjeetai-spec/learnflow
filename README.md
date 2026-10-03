@@ -272,3 +272,7 @@ When a user chooses a preferred name, LearnFlow now saves it to both the applica
 ### Learning card ownership — implemented
 
 Learning cards now show the owner's preferred display name and initials. The owner is resolved from the resource's user ID against the authenticated profile data, so admins can identify which learner or mentor owns a resource while each user can also see ownership on their own cards.
+
+### Mobile authentication visibility — fixed
+
+The mobile header now keeps the Log in/Log out control visible on small screens. Previously the shared desktop button was hidden by the mobile header rules, which made authentication inaccessible from mobile Safari and other mobile browsers.
