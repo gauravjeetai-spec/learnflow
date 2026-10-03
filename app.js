@@ -346,8 +346,10 @@ function bindEvents(){
     const button=e.target.querySelector('button[type="submit"]');
     if(button){button.disabled=true;button.textContent='Saving…'}
     const {data,error}=await supa.from('profiles').update({display_name,name_setup_completed:true}).eq('user_id',user.id).select('*').single();
+    if(error){if(button){button.disabled=false;button.textContent='Continue'}console.error(error);toast('Could not save your name: '+error.message);return}
+    const {error:authError}=await supa.auth.updateUser({data:{full_name:display_name}});
+    if(authError){console.error(authError);if(button){button.disabled=false;button.textContent='Continue'}toast('Your LearnFlow name was saved, but we could not sync the authentication profile. Please try again.');return}
     if(button){button.disabled=false;button.textContent='Continue'}
-    if(error){console.error(error);toast('Could not save your name: '+error.message);return}
     profile=data;
     currentView='overview';
     updateRoleUI();
