@@ -260,3 +260,7 @@ Push changes to the GitHub `main` branch. Vercel deploys the production applicat
 ### Preferred name onboarding — implemented
 
 Users without a saved preferred name are now prompted after login to choose the name LearnFlow should use in greetings and workspace identity. The value is stored in the existing profile display-name field, and new accounts no longer default to the email prefix unless an explicit full name was provided.
+
+### Preferred name is explicit user choice — updated
+
+Every user, including existing accounts, must explicitly choose the name LearnFlow should use. The app no longer treats an email-derived name or an authentication-provided name as the user's preferred name. Completion is tracked separately in the profile, so users can intentionally use a nickname, alias, or other preferred name.
