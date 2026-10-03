@@ -14,6 +14,42 @@ const demoResources = [
   {id:8,title:'Advanced Excel',type:'Course',provider:'Coursera',goal:'Build Business Acumen',skills:['Financial Modeling'],status:'Planned',progress:12,priority:'Low',due:'Nov 02',hours:'1 / 10h',column:'planned',owner:'P',color:'orange',activity:[['Sep 10','Study · 1h']]}
 ];
 const columns=[['backlog','BACKLOG'],['planned','PLANNED'],['in-progress','IN PROGRESS'],['practice','PRACTICE / REVIEW'],['completed','COMPLETED']];
+const demoGoals=[
+  {id:'demo-goal-1',title:'Build Business Acumen',description:'Become a stronger, more confident operator.',priority:'High',status:'active'},
+  {id:'demo-goal-2',title:'Become Better at AI',description:'Build practical fluency in modern AI systems.',priority:'High',status:'active'},
+  {id:'demo-goal-3',title:'Improve Leadership',description:'Lead with clarity, empathy, and conviction.',priority:'Medium',status:'active'},
+  {id:'demo-goal-4',title:'Master Marketing',description:'Understand how great products find their people.',priority:'Medium',status:'active'}
+];
+const demoSkills=[
+  {id:'demo-skill-1',title:'Financial Modeling',description:'Build and interpret models to make better decisions.'},
+  {id:'demo-skill-2',title:'AI Engineering',description:'Design useful systems with modern AI primitives.'},
+  {id:'demo-skill-3',title:'Business Strategy',description:'See the system, find the leverage, make the call.'},
+  {id:'demo-skill-4',title:'Leadership',description:'Create clarity and momentum for other people.'},
+  {id:'demo-skill-5',title:'Marketing',description:'Turn customer insight into meaningful growth.'},
+  {id:'demo-skill-6',title:'Sales',description:'Build trust and move from interest to action.'}
+];
+const demoSprints=[
+  {id:'demo-sprint-1',title:'Build the foundation',start_date:'2026-09-21',end_date:'2026-09-27',status:'active'},
+  {id:'demo-sprint-2',title:'AI practice week',start_date:'2026-09-28',end_date:'2026-10-04',status:'planned'}
+];
+const demoActivities=[
+  {id:'demo-activity-1',resource_id:1,activity_type:'Study',duration_minutes:60,notes:'Worked through financial modeling fundamentals.',occurred_at:'2026-09-20T09:30:00+05:30'},
+  {id:'demo-activity-2',resource_id:2,activity_type:'Study',duration_minutes:40,notes:'Practiced building an AI workflow.',occurred_at:'2026-09-20T14:00:00+05:30'},
+  {id:'demo-activity-3',resource_id:3,activity_type:'Practice',duration_minutes:50,notes:'Applied prompt patterns to a real task.',occurred_at:'2026-09-19T16:30:00+05:30'},
+  {id:'demo-activity-4',resource_id:5,activity_type:'Read',duration_minutes:90,notes:'Finished the final chapter.',occurred_at:'2026-09-18T20:00:00+05:30'}
+];
+function resetDemoWorkspace(){
+  goalsData=demoGoals.map(x=>({...x}));
+  skillsData=demoSkills.map(x=>({...x}));
+  sprintsData=demoSprints.map(x=>({...x}));
+  activitiesData=demoActivities.map(x=>({...x}));
+  resources=demoResources.map(r=>({...r,skills:[...r.skills],activity:r.activity.map(a=>[...a])}));
+  resources.forEach(r=>{
+    if([1,2,3,5,7].includes(r.id))r.sprint_id='demo-sprint-1';
+    if(r.id===4||r.id===6)r.sprint_id='demo-sprint-2';
+  });
+}
+
 let user=null;
 let profile=null;
 let profiles=[];
@@ -49,13 +85,13 @@ async function updateAccess(userId, role, accessStatus){
   return true;
 }
 async function loadResources(){
-  if(!user||!supa){resources=demoResources.map(r=>({...r,skills:[...r.skills],activity:r.activity.map(a=>[...a])}));return}
+  if(!user||!supa){resetDemoWorkspace();return}
   const {data,error}=await supa.from('resources').select('*').order('created_at',{ascending:false});
   if(error){console.error(error);toast('Could not load saved learning resources');return}
   resources=(data||[]).map(toUiResource);
 }
 async function loadWorkspaceData(){
-  if(!user||!supa){goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];return}
+  if(!user||!supa){resetDemoWorkspace();return}
   const [g,s,sp,a]=await Promise.all([
     supa.from('goals').select('*').order('created_at',{ascending:true}),
     supa.from('skills').select('*').order('created_at',{ascending:true}),
@@ -115,8 +151,7 @@ async function refreshSessionState(){
   updateRoleUI();
   if(!user){
     currentView='overview';
-    await loadResources();
-    goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];
+    resetDemoWorkspace();
   }else if(profile?.access_status==='active'){
     if(currentView==='login')currentView='overview';
     await loadResources();
