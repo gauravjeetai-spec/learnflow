@@ -73,6 +73,13 @@ The previous callback used a deployment-specific Vercel URL (`learnflow-61x1m7ma
 
 For the next login test, use one fresh magic link after the Supabase URL configuration has been corrected. Links already issued with an earlier callback continue to use the callback embedded when they were created.
 
+### Production authentication configuration — 2026-10-03
+
+- The application sends Supabase magic-link requests with `https://learnflow-steel.vercel.app/` as the explicit redirect target.
+- Supabase Authentication must use `https://learnflow-steel.vercel.app/` as the Site URL and include the same exact URL in the Redirect URLs allow-list.
+- The frontend no longer contains development-host references, browser resource persistence, or development/offline fallback behavior.
+- Custom SMTP is not yet configured. Supabase's built-in email service is intentionally temporary because its project email limit is very low; configure a transactional SMTP provider before broader user testing.
+
 ### Next milestone
 
 Complete the end-to-end browser verification with the Admin account: **Log in → open User access → confirm Admin role → create a second test user → approve it as Learner or Mentor → verify the pending/approved access flow**. Then return to authenticated resource persistence testing. with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
