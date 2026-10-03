@@ -60,7 +60,10 @@ const root=document.getElementById('view-container'); const modalBackdrop=docume
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function toUiResource(r){
   const column=r.status==='completed'?'completed':r.status==='in-progress'?'in-progress':r.status==='practice'?'practice':r.status;
-  return {...r,column,status:column==='completed'?'Completed':column==='in-progress'?'In Progress':column==='practice'?'Practice / Review':column==='planned'?'Planned':'Backlog',due:r.due_date||'Not scheduled',owner:user?.email?.slice(0,1).toUpperCase()||'J',color:'blue',hours:r.estimated_hours?('0 / '+r.estimated_hours+'h'):'0 / —',activity:[]};
+  const ownerProfile=profiles.find(p=>p.user_id===r.user_id)||(r.user_id===user?.id?profile:null);
+  const ownerName=ownerProfile?.display_name||'Learner';
+  const ownerInitials=ownerName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')||'L';
+  return {...r,column,status:column==='completed'?'Completed':column==='in-progress'?'In Progress':column==='practice'?'Practice / Review':column==='planned'?'Planned':'Backlog',due:r.due_date||'Not scheduled',owner:ownerInitials,ownerName,color:'blue',hours:r.estimated_hours?('0 / '+r.estimated_hours+'h'):'0 / —',activity:[]};
 }
 async function loadProfile(){
   if(!user||!supa){profile=null;return}
@@ -187,7 +190,9 @@ async function authAction(){
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view[0].toUpperCase()+view.slice(1);render()}
-function resourceCard(r){return `<article class="course-card" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${r.goal}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${r.due}</span><span class="avatar-stack"><span class="avatar avatar-${r.color}">${r.owner}</span></span></div></article>`}
+function resourceCard(r){
+  return `<article class="course-card" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${r.goal}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${r.due}</span><span class="owner-badge" title="${esc(r.ownerName)}"><span class="avatar avatar-${r.color}">${r.owner}</span><span class="owner-name">${esc(r.ownerName)}</span></span></div></article>`;
+}
 function loginView(){
   return `<div class="auth-page">
     <div class="auth-card">
