@@ -153,8 +153,9 @@ async function refreshSessionState(){
     currentView='overview';
     resetDemoWorkspace();
   }else if(profile?.access_status==='active'){
-    if(currentView==='login')currentView=profile.display_name?'overview':'name-setup';
-    if(currentView==='name-setup'&&!profile.display_name){await loadResources();await loadWorkspaceData();render();return}
+    if(!profile.display_name)currentView='name-setup';
+    else if(currentView==='login'||currentView==='name-setup')currentView='overview';
+    if(currentView==='name-setup'){await loadResources();await loadWorkspaceData();render();return}
     await loadResources();
     await loadWorkspaceData();
   }else{
