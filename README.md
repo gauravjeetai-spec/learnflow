@@ -72,6 +72,12 @@ This README is the canonical project record for LearnFlow's implemented architec
 - Role and access decisions are enforced in the database, not only hidden in the browser UI.
 - Migration files: `supabase/migrations/20261003_add_user_roles_and_access.sql` and `supabase/migrations/20261003_enforce_resource_access_status.sql`.
 
+### Auth callback hardening — 2026-10-03
+
+Magic-link requests now always use the canonical Vercel LearnFlow URL (`https://learnflow-61x1m7mar-gauravjeetai.vercel.app/`) as the callback. This prevents a login link requested from a local development server from returning to `localhost:3000`.
+
+For the next login test, wait for the Supabase email-send rate limit to reset and request **one** fresh link. Do not repeatedly resend links. The previously received localhost link is expected to continue returning to localhost because its callback was fixed at the time it was issued.
+
 ### Next milestone
 
 Complete the end-to-end browser verification with the Admin account: **Log in → open User access → confirm Admin role → create a second test user → approve it as Learner or Mentor → verify the pending/approved access flow**. Then return to authenticated resource persistence testing. with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
