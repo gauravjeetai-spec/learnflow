@@ -114,13 +114,13 @@ The remaining workspace areas are now backed by Supabase instead of fixed demo d
 - A reproducible Supabase migration is stored at `supabase/migrations/20261003_workspace_data.sql`.
 - Existing users with no workspace data receive an initial set of goals, skills, and a starter sprint on first authenticated load.
 
-**Production verification completed for Goals, Skills, and Sprints:** after signing in to the production LearnFlow application, all four seeded goals appeared successfully: Build Business Acumen, Become Better at AI, Improve Leadership, and Master Marketing. The six seeded skills also appeared successfully: Financial Modeling, AI Engineering, Business Strategy, Leadership, Marketing, and Sales. The seeded sprint **Build the foundation** appeared successfully, and a new sprint named **Test Sprint** was created and remained visible after a full browser refresh, confirming persistence for the signed-in user.
+**Production verification completed for Goals, Skills, Sprints, and Activity:** after signing in to the production LearnFlow application, all four seeded goals appeared successfully: Build Business Acumen, Become Better at AI, Improve Leadership, and Master Marketing. The six seeded skills also appeared successfully: Financial Modeling, AI Engineering, Business Strategy, Leadership, Marketing, and Sales. The seeded sprint **Build the foundation** appeared successfully, and a new sprint named **Test Sprint** was created and remained visible after a full browser refresh, confirming persistence for the signed-in user. A 30-minute **Study** activity named **Test learning session** was logged against **TEST-Isolation** and remained visible after a full browser refresh, confirming activity persistence.
 
-The remaining workspace areas still require production UI verification.
+The remaining workspace area requiring production UI verification is Analytics.
 
 ### Next milestone
 
-Verify production behavior for **Activity → Analytics**, including logging one activity, refreshing, and confirming the activity and resulting analytics values persist for the signed-in user.
+Verify production behavior for **Analytics**, including confirming that the authenticated user's live resource and activity data are reflected in the metrics after refresh.
 
 ## Architecture direction
 
