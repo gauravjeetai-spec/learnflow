@@ -74,9 +74,11 @@ This README is the canonical project record for LearnFlow's implemented architec
 
 ### Auth callback hardening — 2026-10-03
 
-Magic-link requests now always use the canonical Vercel LearnFlow URL (`https://learnflow-61x1m7mar-gauravjeetai.vercel.app/`) as the callback. This prevents a login link requested from a local development server from returning to `localhost:3000`.
+Magic-link requests now always use the stable production LearnFlow domain (`https://learnflow-steel.vercel.app/`) as the callback. This prevents a login link requested from a local development server or a deployment-specific Vercel URL from returning to the wrong location.
 
-For the next login test, wait for the Supabase email-send rate limit to reset and request **one** fresh link. Do not repeatedly resend links. The previously received localhost link is expected to continue returning to localhost because its callback was fixed at the time it was issued.
+The previous callback used a deployment-specific Vercel URL (`learnflow-61x1m7mar-gauravjeetai.vercel.app`). The latest production deployment confirms `learnflow-steel.vercel.app` as the stable production domain, so new magic links will use that URL.
+
+For the next login test, wait for the Supabase email-send rate limit to reset and request **one** fresh link. Do not repeatedly resend links. Links already issued with the previous callback continue to use the callback embedded when they were created.
 
 ### Next milestone
 
