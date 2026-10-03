@@ -144,9 +144,19 @@ This completes the first end-to-end relationship chain in the workspace:
 
 `Goal → Skill → Learning Resource → Sprint`
 
+### Current milestone — Sprint-to-Activity workflow
+
+The Activity workflow now carries the learning path context from the selected resource:
+
+- The **Log learning activity** form shows the selected Resource, Goal, Skill, and assigned Sprint before the activity is saved.
+- The activity remains persisted against the resource through `activities.resource_id`; Sprint context is derived from the resource's `sprint_id`, keeping one source of truth for the relationship.
+- Activity history now shows the related Sprint, Goal, and Skill alongside the resource and activity details.
+- Logging an activity continues to increase the resource progress by 5 percentage points and persists the updated resource state.
+- The implementation was checked in and structurally verified in the repository.
+
 ### Next milestone
 
-Connect the Sprint → Activity workflow more explicitly: when logging an Activity, show the selected resource's assigned Sprint and make the activity history clearly traceable back through Resource → Sprint → Goal/Skill.
+Verify the production **Sprint → Activity → Progress** workflow by logging an activity against a resource assigned to **Test Sprint**, refreshing the browser, and confirming the activity shows the Sprint/Goal/Skill context and the resource progress increase remains persisted.
 
 ## Architecture direction
 
