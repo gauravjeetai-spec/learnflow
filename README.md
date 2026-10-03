@@ -155,9 +155,22 @@ The Activity workflow now carries the learning path context from the selected re
 - The implementation was checked in and structurally verified in the repository.
 - Follow-up correction: the Activity form now makes **Resource** selectable, while Goal, Skill, and Sprint remain derived/read-only context from the selected resource. Changing the Resource immediately updates that context before saving.
 
+### Verified milestone — 2026-10-03 (Sprint-to-Activity workflow)
+
+**Sprint → Activity → Progress is now production-verified.**
+
+- The production Activity form allows the user to select a learning resource.
+- Goal, Skill, and Sprint are automatically derived from the selected resource and update when the Resource selection changes.
+- A 20-minute **Practice** activity named **testing sprint activity connection** was logged against **Test sprint**, which is assigned to **Test Sprint**.
+- After the browser refresh, the activity remained visible with **Sprint: Test Sprint**, **Goal: Improve Leadership**, and **Skill: AI**.
+- Supabase verification confirmed the activity is persisted against the resource, the resource remains assigned to **Test Sprint**, and its progress is now **5%**.
+- This confirms the end-to-end chain is now functioning through:
+
+`Goal → Skill → Learning Resource → Sprint → Activity → Progress`
+
 ### Next milestone
 
-Verify the production **Sprint → Activity → Progress** workflow by logging an activity against a resource assigned to **Test Sprint**, refreshing the browser, and confirming the activity shows the Sprint/Goal/Skill context and the resource progress increase remains persisted.
+Connect the existing live Progress data more deeply into Sprint and Goal views so users can see how logged activity is contributing to progress at each level of the learning path.
 
 ## Architecture direction
 
