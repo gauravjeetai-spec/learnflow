@@ -99,7 +99,7 @@ The Learning Board now has the first complete CRUD controls wired to the existin
 - Resources can be marked complete, moving them to the Completed column and saving the change.
 - Resources can be deleted through the resource detail panel.
 - Existing Supabase RLS policies enforce that active learners can only update/delete their own resources; Admins retain cross-user access.
-- Production verification is still pending for edit → refresh persistence, status changes, progress changes, deletion, and cross-user isolation.
+- Production verification completed so far: edit, progress change, status change, and refresh persistence have been verified with a production learner account.
 
 ### Next milestone
 
