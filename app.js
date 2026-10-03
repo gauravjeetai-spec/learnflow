@@ -153,7 +153,7 @@ async function refreshSessionState(){
     currentView='overview';
     resetDemoWorkspace();
   }else if(profile?.access_status==='active'){
-    if(!profile.display_name)currentView='name-setup';
+    if(!profile.name_setup_completed)currentView='name-setup';
     else if(currentView==='login'||currentView==='name-setup')currentView='overview';
     if(currentView==='name-setup'){await loadResources();await loadWorkspaceData();render();return}
     await loadResources();
@@ -345,7 +345,7 @@ function bindEvents(){
     if(!display_name){toast('Please enter your name');return}
     const button=e.target.querySelector('button[type="submit"]');
     if(button){button.disabled=true;button.textContent='Saving…'}
-    const {data,error}=await supa.from('profiles').update({display_name}).eq('user_id',user.id).select('*').single();
+    const {data,error}=await supa.from('profiles').update({display_name,name_setup_completed:true}).eq('user_id',user.id).select('*').single();
     if(button){button.disabled=false;button.textContent='Continue'}
     if(error){console.error(error);toast('Could not save your name: '+error.message);return}
     profile=data;
