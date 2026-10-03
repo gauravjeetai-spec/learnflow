@@ -153,7 +153,8 @@ async function refreshSessionState(){
     currentView='overview';
     resetDemoWorkspace();
   }else if(profile?.access_status==='active'){
-    if(currentView==='login')currentView='overview';
+    if(currentView==='login')currentView=profile.display_name?'overview':'name-setup';
+    if(currentView==='name-setup'&&!profile.display_name){await loadResources();await loadWorkspaceData();render();return}
     await loadResources();
     await loadWorkspaceData();
   }else{
@@ -212,6 +213,25 @@ function loginView(){
   </div>`;
 }
 
+function nameSetup(){
+  return `<div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+      <div class="eyebrow">One quick question</div>
+      <h1>What should we call you?</h1>
+      <p class="auth-copy">This is the name LearnFlow will use when greeting you and around your workspace.</p>
+      <form id="name-form">
+        <div class="field">
+          <label>Your name</label>
+          <input name="display_name" type="text" autocomplete="name" placeholder="e.g. Gaurav" maxlength="80" required>
+        </div>
+        <button class="primary-button auth-submit" type="submit">Continue</button>
+      </form>
+      <p class="auth-help">You can change this later from your profile settings.</p>
+    </div>
+  </div>`;
+}
+
 function accessGate(){
   const status=profile?.access_status;
   const title=status==='pending'?'Access pending':status==='rejected'?'Access not approved':'Access suspended';
@@ -239,7 +259,7 @@ function activity(){return `<div class="page"><div class="page-heading"><div><di
 function analytics(){const total=resources.length,completed=resources.filter(r=>r.progress===100).length,inProgress=resources.filter(r=>r.column==='in-progress').length,progress=total?Math.round(resources.reduce((a,r)=>a+r.progress,0)/total):0;const totalMinutes=activitiesData.reduce((a,x)=>a+Number(x.duration_minutes||0),0);const activeDays=new Set(activitiesData.map(x=>new Date(x.occurred_at).toISOString().slice(0,10))).size;const byGoal=goalsData.map(g=>{const rs=resources.filter(r=>r.goal===g.title);return [g.title,rs.length?Math.round(rs.reduce((a,r)=>a+r.progress,0)/rs.length):0]});return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Make progress visible</div><h1>Analytics</h1><p>Understand how your learning is moving, not just where it is.</p></div></div><div class="metric-grid"><div class="metric-card"><span class="stat-label">Overall progress</span><strong>${progress}%</strong><span class="stat-meta">${total} resources</span></div><div class="metric-card"><span class="stat-label">Completion rate</span><strong>${total?Math.round(completed/total*100):0}%</strong><span class="stat-meta">${completed} of ${total} resources</span></div><div class="metric-card"><span class="stat-label">Learning time</span><strong>${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</strong><span class="stat-meta">Logged activity</span></div><div class="metric-card"><span class="stat-label">Active learning days</span><strong>${activeDays}</strong><span class="stat-meta">Recorded sessions</span></div></div><div class="analytics-grid" style="margin-top:13px"><section class="panel"><div class="panel-header"><h3>Resource status</h3><span class="panel-link">${total} total</span></div><div class="mini-stats" style="justify-content:center;margin:30px 0"><div><strong>${completed}</strong><span>completed</span></div><div><strong>${inProgress}</strong><span>in progress</span></div><div><strong>${total-completed-inProgress}</strong><span>other</span></div></div></section><section class="panel"><div class="panel-header"><h3>Learning time</h3><span class="panel-link">All logged activity</span></div><div class="momentum-score"><strong>${(totalMinutes/60).toFixed(1)}h</strong><small>LOGGED</small></div><p class="momentum-copy">Keep logging sessions to build a useful personal learning history.</p></section></div><section class="panel" style="margin-top:13px"><div class="panel-header"><h3>Progress by goal</h3><span class="panel-link">Live from resources</span></div>${byGoal.map(x=>`<div class="progress-row"><span>${esc(x[0])}</span><b>${x[1]}%</b></div><div class="progress-track" style="margin-bottom:12px"><div class="progress-fill" style="width:${x[1]}%"></div></div>`).join('')||'<div class="empty-state">Create goals and resources to see progress here.</div>'}</section></div>`}
 function render(){
   if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,login:loginView};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,login:loginView,'name-setup':nameSetup};
   root.innerHTML=views[currentView]?views[currentView]():overview();
   bindEvents();
 }
@@ -316,6 +336,23 @@ function logActivity(id){const initialId=id??resources[0]?.id;if(!resources.leng
 
 function bindEvents(){
   document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
+  document.getElementById('name-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!user||!supa)return;
+    const f=new FormData(e.target);
+    const display_name=String(f.get('display_name')||'').trim();
+    if(!display_name){toast('Please enter your name');return}
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Saving…'}
+    const {data,error}=await supa.from('profiles').update({display_name}).eq('user_id',user.id).select('*').single();
+    if(button){button.disabled=false;button.textContent='Continue'}
+    if(error){console.error(error);toast('Could not save your name: '+error.message);return}
+    profile=data;
+    currentView='overview';
+    updateRoleUI();
+    render();
+    toast('Welcome to LearnFlow, '+display_name+'!');
+  });
   document.getElementById('login-form')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const f=new FormData(e.target);
