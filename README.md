@@ -15,7 +15,7 @@ The production application is deployed from the GitHub `main` branch through Ver
 - Progress updates, mark complete, and activity logging
 - In-memory demo resources for the unauthenticated preview; authenticated resources are persisted in Supabase
 - Responsive mobile layout with bottom navigation
-- Dark mode preference persistence
+- In-memory dark mode toggle
 - Demo board: 2026 Growth & Business Learning
 
 
@@ -44,9 +44,9 @@ This README is the canonical project record for LearnFlow's implemented architec
 
 ### Verified milestone — 2026-10-02 (startup regression hardening)
 
-- Supabase initialization was moved behind an asynchronous startup boundary so a CDN/module loading problem cannot prevent the LearnFlow UI from rendering.
-- The app now renders the demo/guest experience first, then attempts Supabase initialization.
-- If Supabase initialization fails, LearnFlow remains usable in offline demo mode and reports the fallback instead of showing a blank screen.
+- Supabase initialization is isolated behind an asynchronous startup boundary so a CDN/module loading problem cannot prevent the LearnFlow UI from rendering.
+- The app renders the preview experience first, then attempts Supabase initialization.
+- If Supabase initialization fails, LearnFlow reports the connection problem instead of showing a blank screen.
 - The Supabase client is created at runtime with the existing browser-safe anon key; no service-role credential is used.
 - `app.js` syntax was revalidated after this change.
 
@@ -77,12 +77,21 @@ For the next login test, use one fresh magic link after the Supabase URL configu
 
 - The application sends Supabase magic-link requests with `https://learnflow-steel.vercel.app/` as the explicit redirect target.
 - Supabase Authentication must use `https://learnflow-steel.vercel.app/` as the Site URL and include the same exact URL in the Redirect URLs allow-list.
-- The frontend no longer contains development-host references, browser resource persistence, or development/offline fallback behavior.
+- The frontend no longer contains development-host references or browser resource persistence.
 - Custom SMTP is not yet configured. Supabase's built-in email service is intentionally temporary because its project email limit is very low; configure a transactional SMTP provider before broader user testing.
+
+### Verified milestone — 2026-10-03 (password login fallback)
+
+**Password authentication is now available alongside magic links.**
+
+- LearnFlow now supports Supabase email/password sign-in through `signInWithPassword`.
+- The existing magic-link flow remains available when the password prompt is left blank.
+- This provides a testable authentication path while the built-in email provider is rate-limited.
+- The stale unauthenticated resource persistence call was removed; unauthenticated preview data remains in memory only.
 
 ### Next milestone
 
-Complete the end-to-end browser verification with the Admin account: **Log in → open User access → confirm Admin role → create a second test user → approve it as Learner or Mentor → verify the pending/approved access flow**. Then return to authenticated resource persistence testing. with a real authenticated user: **Log in → Add Learning → confirm row in Supabase → refresh browser → resource remains available**. After that, implement dedicated activity persistence and edit/delete controls.
+Create/confirm a test account with a password in Supabase Auth, then verify the production flow: **Password login → Admin access → User access → create/approve a second test user → authenticated resource persistence**. After that, implement dedicated activity persistence and edit/delete controls.
 
 ## Architecture direction
 
@@ -124,7 +133,7 @@ This app now supports **multiple users** logging in with Supabase Authentication
 
 ### 1. Enable Auth in Supabase
 1. Open the Supabase Authentication settings.
-2. LearnFlow currently uses **email magic-link authentication**.
+2. LearnFlow supports **email/password authentication** and **email magic-link authentication**.
 3. Add the production LearnFlow URL to the allowed redirect URL settings in Supabase.
 4. Set the Site URL to the deployed LearnFlow URL.
 
@@ -133,14 +142,15 @@ Go to https://supabase.com/dashboard/project/zltqnsylerhcbnslqcqm/SQL and run th
 
 ### 3. How It Works
 - Users visit the URL and click **"Log in"** (top right button).
-- Supabase sends a magic link to the user's email.
+- Entering a password signs in directly with Supabase Auth.
+- Leaving the password blank requests a magic link; this remains available for passwordless users.
 - New users are created as **pending Learners** and cannot use the workspace until an Admin approves them.
 - Admins can approve/reject/suspend users and assign **Admin, Mentor, or Learner** roles from the User access screen.
 - Each user's resources are filtered by their `auth.users.id`; Admins can access resources across users.
 - Database Row Level Security enforces the access rules.
 
 ### 4. Login/Logout UI
-- **Log in button**: Top right corner (☾ icon) - opens SupAuth flow
+- **Log in button**: Top right corner - opens the email/password flow with magic-link fallback
 - **Log out**: Same button - signs out and shows demo data
 - **Welcome message**: Shows user's first name on Overview page
 
@@ -149,7 +159,7 @@ Go to https://supabase.com/dashboard/project/zltqnsylerhcbnslqcqm/SQL and run th
 Push changes to the GitHub `main` branch. Vercel deploys the production application automatically. Supabase remains the authentication and persistent data service.
 
 ### 5. Known Limitations (Updated)
-- Authentication is email magic-link via Supabase (no Google/Apple SSO yet).
+- Authentication supports Supabase email/password and magic-link sign-in (no Google/Apple SSO yet).
 - Mentor permissions are currently the same as an active learner; mentor-specific learner assignment/management is a later milestone.
 - Admins have cross-user resource access; finer-grained workspace permissions are a later milestone.
 - Demo resources are available as an unauthenticated preview; authenticated users use Supabase data.
