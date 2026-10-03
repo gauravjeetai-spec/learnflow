@@ -113,9 +113,20 @@ async function refreshSessionState(){
   await loadProfiles();
   updateAuthButton();
   updateRoleUI();
-  if(!user){currentView='overview';await loadResources();goalsData=[];skillsData=[];sprintsData=[];activitiesData=[]}
-  else if(profile?.access_status==='active'){await loadResources();await loadWorkspaceData()}
-  else {resources=[];goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];}
+  if(!user){
+    currentView='overview';
+    await loadResources();
+    goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];
+  }else if(profile?.access_status==='active'){
+    if(currentView==='login')currentView='overview';
+    await loadResources();
+    await loadWorkspaceData();
+  }else{
+    resources=[];goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];
+  }
+  const activeView=document.getElementById('breadcrumb-current');
+  if(activeView)activeView.textContent=currentView==='board'?'Learning Board':currentView[0].toUpperCase()+currentView.slice(1);
+  document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));
   render();
 }
 function updateAuthButton(){const b=document.getElementById('auth-button');if(b)b.textContent=user?'Log out':'Log in';}
