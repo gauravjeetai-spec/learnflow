@@ -54,7 +54,7 @@ async function loadResources(){
   resources=(data||[]).map(toUiResource);
 }
 async function persistResource(r){
-  if(!user||!supa){save();return true}
+  if(!user||!supa)return true
   const payload={title:r.title,type:r.type,provider:r.provider||'Independent',goal:r.goal||null,skills:r.skills||[],status:r.column||'backlog',progress:r.progress||0,priority:r.priority||'Medium',due_date:r.due&&r.due!=='Not scheduled'?r.due:null,estimated_hours:r.estimated_hours??null,notes:r.notes||null,owner_label:user.email?.split('@')[0]||null};
   if(typeof r.id==='string')payload.id=r.id;
   const {data,error}=await supa.from('resources').upsert(payload).select().single();
@@ -98,8 +98,14 @@ function updateRoleUI(){
 }
 async function authAction(){
   if(user){const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
-  const email=prompt('Enter your email to receive a LearnFlow login link');
+  const email=prompt('Enter your LearnFlow email');
   if(!email)return;
+  const password=prompt('Enter your password. Leave blank to use a magic link.');
+  if(password){
+    const {error}=await supa.auth.signInWithPassword({email,password});
+    toast(error?error.message:'Signed in successfully.');
+    return;
+  }
   const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
   toast(error?error.message:'Check your email for the LearnFlow login link.');
 }
