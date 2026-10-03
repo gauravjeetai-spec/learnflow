@@ -168,6 +168,8 @@ function updateAuthButton(){const b=document.getElementById('auth-button');if(b)
 function updateRoleUI(){
   const adminNav=document.getElementById('admin-nav');
   if(adminNav)adminNav.style.display=profile?.role==='admin'&&profile?.access_status==='active'?'flex':'none';
+  const workspace=document.getElementById('sidebar-workspace');
+  if(workspace)workspace.style.display=user?'block':'none';
   const roleLabel=document.getElementById('user-role-label');
   if(roleLabel)roleLabel.textContent=profile?.role?profile.role[0].toUpperCase()+profile.role.slice(1):'Guest';
   const userName=document.getElementById('user-name');
