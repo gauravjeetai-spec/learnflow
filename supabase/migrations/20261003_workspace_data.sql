@@ -89,8 +89,14 @@ create policy "Users can update their own sprints" on public.sprints for update 
 create policy "Users can delete their own sprints" on public.sprints for delete using ((user_id=auth.uid() and has_active_access()) or is_admin());
 
 create policy "Users can view their own activities" on public.activities for select using ((user_id=auth.uid() and has_active_access()) or is_admin());
-create policy "Users can create their own activities" on public.activities for insert with check ((user_id=auth.uid() and has_active_access()) or is_admin());
-create policy "Users can update their own activities" on public.activities for update using ((user_id=auth.uid() and has_active_access()) or is_admin());
+create policy "Users can create their own activities" on public.activities for insert with check (
+  ((user_id=auth.uid() and has_active_access()) or is_admin())
+  and (is_admin() or resource_id is null or exists (select 1 from public.resources r where r.id=activities.resource_id and r.user_id=auth.uid()))
+);
+create policy "Users can update their own activities" on public.activities for update using ((user_id=auth.uid() and has_active_access()) or is_admin()) with check (
+  ((user_id=auth.uid() and has_active_access()) or is_admin())
+  and (is_admin() or resource_id is null or exists (select 1 from public.resources r where r.id=activities.resource_id and r.user_id=auth.uid()))
+);
 create policy "Users can delete their own activities" on public.activities for delete using ((user_id=auth.uid() and has_active_access()) or is_admin());
 
 grant select, insert, update, delete on table public.goals, public.skills, public.sprints, public.activities to authenticated;
