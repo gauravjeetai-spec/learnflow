@@ -89,9 +89,21 @@ For the next login test, use one fresh magic link after the Supabase URL configu
 - This provides a testable authentication path while the built-in email provider is rate-limited.
 - The stale unauthenticated resource persistence call was removed; unauthenticated preview data remains in memory only.
 
+### Current milestone — Learning Board CRUD implementation
+
+The Learning Board now has the first complete CRUD controls wired to the existing Supabase resource service:
+
+- Existing resources can be opened and edited from the board.
+- Edit supports title, type, status, progress, priority, goal, skill, provider, target date, estimated hours, and notes.
+- Progress can be incremented from the resource detail panel and saved to Supabase.
+- Resources can be marked complete, moving them to the Completed column and saving the change.
+- Resources can be deleted through the resource detail panel.
+- Existing Supabase RLS policies enforce that active learners can only update/delete their own resources; Admins retain cross-user access.
+- Production verification is still pending for edit → refresh persistence, status changes, progress changes, deletion, and cross-user isolation.
+
 ### Next milestone
 
-Create/confirm a test account with a password in Supabase Auth, then verify the production flow: **Password login → Admin access → User access → create/approve a second test user → authenticated resource persistence**. After that, implement dedicated activity persistence and edit/delete controls.
+Verify the production CRUD flow end-to-end with the two existing test users: **edit → refresh → status change → progress change → delete → confirm persistence/isolation**. Once verified, record the result here before moving on to dedicated activity persistence.
 
 ## Architecture direction
 
