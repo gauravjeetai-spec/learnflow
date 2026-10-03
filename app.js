@@ -227,7 +227,7 @@ function nameSetup(){
         </div>
         <button class="primary-button auth-submit" type="submit">Continue</button>
       </form>
-      <p class="auth-help">You can change this later from your profile settings.</p>
+      <p class="auth-help">We’ll use this name for your greetings and workspace identity.</p>
     </div>
   </div>`;
 }
