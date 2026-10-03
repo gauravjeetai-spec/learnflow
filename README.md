@@ -276,3 +276,7 @@ Learning cards now show the owner's preferred display name and initials. The own
 ### Mobile authentication visibility — fixed
 
 The mobile header now keeps the Log in/Log out control visible on small screens. Previously the shared desktop button was hidden by the mobile header rules, which made authentication inaccessible from mobile Safari and other mobile browsers.
+
+### Authenticated overview uses live user data — implemented
+
+The Overview now separates guest and authenticated experiences. Logged-out visitors continue to see the curated demo workspace, while authenticated users see metrics, sprint information, learning activity, focus items, attention counts, and progress calculated from their own Supabase-backed resources and activities. Empty user data produces clear zero/empty states instead of demo values.
