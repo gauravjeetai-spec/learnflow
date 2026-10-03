@@ -252,3 +252,7 @@ Push changes to the GitHub `main` branch. Vercel deploys the production applicat
 - Next verification step: deploy this commit, click **Log in**, enter the email address, and confirm that Supabase accepts the request and sends the magic-link email.
 - If the request is accepted but no email arrives, the next check is Supabase Auth email delivery/SMTP configuration.
 
+
+
+### Guest experience cleanup — implemented
+- Logged-out visitors now see the demo workspace without authenticated-user workspace controls, Shared with me, Settings, or the guest user card.
