@@ -118,9 +118,20 @@ The remaining workspace areas are now backed by Supabase instead of fixed demo d
 
 The remaining workspace area requiring production UI verification is Analytics.
 
+### Verified milestone — 2026-10-03 (workspace data production verification)
+
+**Goals, Skills, Sprints, Activity, and Analytics have now been verified in the production application.**
+
+- Goals: all four seeded goals appeared for the signed-in user.
+- Skills: all six seeded skills appeared for the signed-in user.
+- Sprints: the seeded sprint appeared; **Test Sprint** was created and remained visible after a browser refresh.
+- Activity: a 30-minute Study session named **Test learning session** was logged against **TEST-Isolation** and remained visible after a browser refresh.
+- Analytics: the production dashboard reflected the authenticated user's live data, showing **5% overall progress**, **0% completion rate**, **0h 30m learning time**, **1 active learning day**, and **1 resource**. The goal breakdown also showed 5% progress for Build Business Acumen and 0% for the other seeded goals.
+- This confirms the workspace views are reading the authenticated user's Supabase-backed resources and activities rather than relying on the previous fixed analytics values.
+
 ### Next milestone
 
-Verify production behavior for **Analytics**, including confirming that the authenticated user's live resource and activity data are reflected in the metrics after refresh.
+The workspace data foundation is now production-verified. The next implementation step is to improve the relationships and workflow UX—for example, linking resources to sprints from the Add/Edit Learning flow and then expanding richer goal/skill/activity management.
 
 ## Architecture direction
 
