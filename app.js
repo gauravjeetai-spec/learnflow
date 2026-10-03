@@ -143,7 +143,68 @@ function render(){
   root.innerHTML=views[currentView]?views[currentView]():overview();
   bindEvents();
 }
-function openResource(id){const r=resources.find(x=>x.id==id);if(!r)return;modal.innerHTML=`<div class="detail-head"><div><div class="detail-type">${r.type} · ${r.provider}</div><h2 class="detail-title">${esc(r.title)}</h2><div class="detail-provider">${r.goal}</div></div><button class="close-button" id="close-modal">×</button></div><div class="detail-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div><div style="display:flex;gap:7px;margin-top:13px"><button class="filter-button" data-progress="${r.id}">+5%</button><button class="filter-button" data-progress="${r.id}">+10%</button><button class="primary-button" style="padding:7px 10px;margin-left:auto" data-complete="${r.id}">Mark complete</button></div></div><div class="detail-meta"><div><span>Estimated</span><strong>20 hours</strong></div><div><span>Actual</span><strong>${r.hours.split('/')[0]}</strong></div><div><span>Target date</span><strong>${r.due}</strong></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${s}</span>`).join('')}</div><div class="detail-tabs"><button class="active">Activity</button><button>Notes</button><button>History</button></div><div class="detail-activity">${r.activity.length?r.activity.map(a=>`<div class="detail-activity-item"><strong>${a[1]}</strong><span>${a[0]}</span></div>`).join(''):'<div class="empty-state" style="padding:24px">No activity yet</div>'}</div><button class="secondary-button" id="log-detail" style="width:100%;margin-top:10px">＋ Log learning activity</button>`;modal.className='modal detail-modal';modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;modal.querySelectorAll('[data-progress]').forEach(b=>b.onclick=()=>{r.progress=Math.min(100,r.progress+Number(b.textContent.replace('+','').replace('%','')));r.status=r.progress===100?'Completed':r.status;r.column=r.progress===100?'completed':r.column;persistResource(r).then(ok=>{if(ok){toast('Progress updated');openResource(r.id);render()}})});document.querySelector('[data-complete]').onclick=()=>{r.progress=100;r.column='completed';r.status='Completed';persistResource(r).then(ok=>{if(ok){toast('Resource completed');closeModal();render()}})};document.getElementById('log-detail').onclick=()=>logActivity(r.id)}
+async function deleteResource(id){
+  if(!user||!supa){resources=resources.filter(x=>x.id!=id);return true}
+  const {data,error}=await supa.from('resources').delete().eq('id',id).select('id').maybeSingle();
+  if(error){console.error(error);toast('Could not delete resource: '+error.message);return false}
+  if(!data){toast('Resource could not be deleted');return false}
+  resources=resources.filter(x=>x.id!=id);
+  return true;
+}
+function openEditResource(id){
+  const r=resources.find(x=>x.id==id);
+  if(!r)return;
+  const status=r.column||'backlog';
+  const skill=r.skills?.[0]||'';
+  modal.className='modal';
+  modal.innerHTML=`<div class="detail-head"><div><div class="eyebrow">Edit learning</div><h2 class="detail-title">${esc(r.title)}</h2></div><button class="close-button" id="close-modal">×</button></div><form id="edit-resource-form"><div class="form-grid"><div class="field full"><label>What do you want to learn?</label><input name="title" value="${esc(r.title)}" required></div><div class="field"><label>Type</label><select name="type">${['Course','Book','Video','Article','Project','Workshop','Podcast','Other'].map(v=>`<option ${r.type===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Status</label><select name="status">${[['backlog','Backlog'],['planned','Planned'],['in-progress','In Progress'],['practice','Practice / Review'],['completed','Completed']].map(([v,l])=>`<option value="${v}" ${status===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>Progress</label><input name="progress" type="number" min="0" max="100" value="${Number(r.progress)||0}"></div><div class="field"><label>Priority</label><select name="priority">${['Medium','High','Low'].map(v=>`<option ${r.priority===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Goal</label><input name="goal" value="${esc(r.goal||'')}"></div><div class="field"><label>Skill</label><input name="skill" value="${esc(skill)}"></div><div class="field"><label>Provider</label><input name="provider" value="${esc(r.provider||'')}"></div><div class="field"><label>Target date</label><input name="due" type="date" value="${r.due_date||''}"></div><div class="field"><label>Estimated hours</label><input name="estimated_hours" type="number" min="0" step="0.25" value="${r.estimated_hours??''}"></div><div class="field full"><label>Notes</label><textarea name="notes" placeholder="Optional notes">${esc(r.notes||'')}</textarea></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Save changes</button></div></form>`;
+  modalBackdrop.classList.add('open');
+  document.getElementById('close-modal').onclick=closeModal;
+  document.getElementById('cancel-modal').onclick=closeModal;
+  document.getElementById('edit-resource-form').onsubmit=async e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const progress=Math.max(0,Math.min(100,Number(f.get('progress'))||0));
+    r.title=f.get('title');
+    r.type=f.get('type');
+    r.provider=f.get('provider')||'Independent';
+    r.goal=f.get('goal')||'';
+    r.skills=[f.get('skill')||'General'];
+    r.priority=f.get('priority');
+    r.column=f.get('status');
+    r.progress=progress;
+    r.status=r.column==='completed'?'Completed':r.column==='in-progress'?'In Progress':r.column==='practice'?'Practice / Review':r.column==='planned'?'Planned':'Backlog';
+    r.due=f.get('due')||'Not scheduled';
+    r.due_date=f.get('due')||null;
+    r.estimated_hours=f.get('estimated_hours')?Number(f.get('estimated_hours')):null;
+    r.notes=f.get('notes')||null;
+    if(await persistResource(r)){closeModal();toast('Learning resource updated');render()}
+  };
+}
+function openResource(id){
+  const r=resources.find(x=>x.id==id);
+  if(!r)return;
+  modal.innerHTML=`<div class="detail-head"><div><div class="detail-type">${esc(r.type)} · ${esc(r.provider)}</div><h2 class="detail-title">${esc(r.title)}</h2><div class="detail-provider">${esc(r.goal||'')}</div></div><button class="close-button" id="close-modal">×</button></div><div class="detail-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div><div style="display:flex;gap:7px;margin-top:13px"><button class="filter-button" data-progress="${r.id}">+5%</button><button class="filter-button" data-progress="${r.id}">+10%</button><button class="primary-button" style="padding:7px 10px;margin-left:auto" data-complete="${r.id}">Mark complete</button></div></div><div class="detail-meta"><div><span>Status</span><strong>${r.status}</strong></div><div><span>Estimated</span><strong>${r.estimated_hours??'—'} hours</strong></div><div><span>Target date</span><strong>${r.due}</strong></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="detail-tabs"><button class="active">Activity</button><button>Notes</button><button>History</button></div><div class="detail-activity">${r.activity.length?r.activity.map(a=>`<div class="detail-activity-item"><strong>${esc(a[1])}</strong><span>${esc(a[0])}</span></div>`).join(''):'<div class="empty-state" style="padding:24px">No activity yet</div>'}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="secondary-button" id="edit-detail" style="flex:1">Edit resource</button><button class="secondary-button" id="log-detail" style="flex:1">＋ Log learning activity</button></div><button class="secondary-button" id="delete-detail" style="width:100%;margin-top:8px;border-color:#e6b4b4;color:#b34a4a">Delete resource</button>`;
+  modal.className='modal detail-modal';
+  modalBackdrop.classList.add('open');
+  document.getElementById('close-modal').onclick=closeModal;
+  document.getElementById('edit-detail').onclick=()=>openEditResource(r.id);
+  document.getElementById('log-detail').onclick=()=>logActivity(r.id);
+  document.getElementById('delete-detail').onclick=async()=>{
+    if(!confirm(`Delete "${r.title}"? This cannot be undone.`))return;
+    if(await deleteResource(r.id)){closeModal();toast('Learning resource deleted');render()}
+  };
+  modal.querySelectorAll('[data-progress]').forEach(b=>b.onclick=async()=>{
+    const amount=Number(b.textContent.replace('+','').replace('%',''));
+    r.progress=Math.min(100,r.progress+amount);
+    if(r.progress===100){r.column='completed';r.status='Completed'}
+    if(await persistResource(r)){toast('Progress updated');openResource(r.id);render()}
+  });
+  document.querySelector('[data-complete]').onclick=async()=>{
+    r.progress=100;r.column='completed';r.status='Completed';
+    if(await persistResource(r)){toast('Resource completed');closeModal();render()}
+  };
+}
 function closeModal(){modalBackdrop.classList.remove('open')}
 function openAdd(){modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal" style="float:right">×</button><h2>Add learning</h2><p class="modal-subtitle">Capture the next thing you want to learn. You can fill in the details later.</p><form id="resource-form"><div class="form-grid"><div class="field full"><label>What do you want to learn?</label><input name="title" placeholder="e.g. Financial Modeling for Entrepreneurs" required autofocus></div><div class="field"><label>Type</label><select name="type"><option>Course</option><option>Book</option><option>Video</option><option>Article</option><option>Project</option><option>Workshop</option></select></div><div class="field"><label>Priority</label><select name="priority"><option>Medium</option><option>High</option><option>Low</option></select></div><div class="field"><label>Goal</label><select name="goal"><option>Build Business Acumen</option><option>Become Better at AI</option><option>Improve Leadership</option><option>Master Marketing</option></select></div><div class="field"><label>Skill</label><input name="skill" placeholder="e.g. Product Strategy"></div><div class="field"><label>Provider</label><input name="provider" placeholder="e.g. Coursera"></div><div class="field"><label>Target date</label><input name="due" type="date"></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Add learning</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('resource-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const r={title:f.get('title'),type:f.get('type'),provider:f.get('provider')||'Independent',goal:f.get('goal'),skills:[f.get('skill')||'General'],status:'Backlog',progress:0,priority:f.get('priority'),due:f.get('due')||'Not scheduled',hours:'0 / —',column:'backlog',owner:'J',color:'blue',activity:[]};if(await persistResource(r)){resources.unshift(r);closeModal();toast(user?'Learning resource synced':'Learning resource added');render()}}}
 function logActivity(id){const r=resources.find(x=>x.id==id)||resources[0];modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal" style="float:right">×</button><h2>Log learning activity</h2><p class="modal-subtitle">Make the work visible. It only takes a few seconds.</p><form id="activity-form"><div class="form-grid"><div class="field full"><label>Resource</label><input value="${esc(r?.title||'Learning resource')}" disabled></div><div class="field"><label>Activity type</label><select><option>Study</option><option>Watch</option><option>Read</option><option>Practice</option><option>Project</option><option>Revision</option></select></div><div class="field"><label>Duration</label><input placeholder="e.g. 45" type="number"></div><div class="field full"><label>Notes</label><textarea placeholder="What did you learn?"></textarea></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Save activity</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('activity-form').onsubmit=e=>{e.preventDefault();r.activity.unshift(['Sep 20','Study · 45m']);r.progress=Math.min(100,r.progress+5);persistResource(r).then(ok=>{if(ok){closeModal();toast('Activity logged · progress +5%');render()}})}}
