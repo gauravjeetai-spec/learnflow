@@ -1,7 +1,7 @@
 let supa=null;
 const SUPABASE_URL='https://zltqnsylerhcbnslqcqm.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_rwWi8lxqY2rHQvTmfBr0qw_BO_gNh9J';
-const AUTH_REDIRECT_URL='https://learnflow-61x1m7mar-gauravjeetai.vercel.app/';
+const AUTH_REDIRECT_URL='https://learnflow-steel.vercel.app/';
 
 const demoResources = [
   {id:1,title:'Financial Modeling for Entrepreneurs',type:'Course',provider:'Udemy',goal:'Build Business Acumen',skills:['Financial Modeling','Business Strategy'],status:'In Progress',progress:78,priority:'High',due:'Sep 27',hours:'15.6 / 20h',column:'in-progress',owner:'J',color:'blue',activity:[['Sep 20','Study · 1h'],['Sep 19','Practice · 45m'],['Sep 18','Watch · 1h 20m']]},
