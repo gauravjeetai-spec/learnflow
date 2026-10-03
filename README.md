@@ -268,3 +268,7 @@ Every user, including existing accounts, must explicitly choose the name LearnFl
 ### Preferred name synchronization — implemented
 
 When a user chooses a preferred name, LearnFlow now saves it to both the application profile (`profiles.display_name`) and Supabase Auth user metadata (`full_name`). The application profile remains the canonical LearnFlow identity, while the Auth record stays consistent with the user's explicit choice.
+
+### Learning card ownership — implemented
+
+Learning cards now show the owner's preferred display name and initials. The owner is resolved from the resource's user ID against the authenticated profile data, so admins can identify which learner or mentor owns a resource while each user can also see ownership on their own cards.
