@@ -264,3 +264,7 @@ Users without a saved preferred name are now prompted after login to choose the 
 ### Preferred name is explicit user choice — updated
 
 Every user, including existing accounts, must explicitly choose the name LearnFlow should use. The app no longer treats an email-derived name or an authentication-provided name as the user's preferred name. Completion is tracked separately in the profile, so users can intentionally use a nickname, alias, or other preferred name.
+
+### Preferred name synchronization — implemented
+
+When a user chooses a preferred name, LearnFlow now saves it to both the application profile (`profiles.display_name`) and Supabase Auth user metadata (`full_name`). The application profile remains the canonical LearnFlow identity, while the Auth record stays consistent with the user's explicit choice.
