@@ -153,6 +153,7 @@ The Activity workflow now carries the learning path context from the selected re
 - Activity history now shows the related Sprint, Goal, and Skill alongside the resource and activity details.
 - Logging an activity continues to increase the resource progress by 5 percentage points and persists the updated resource state.
 - The implementation was checked in and structurally verified in the repository.
+- Follow-up correction: the Activity form now makes **Resource** selectable, while Goal, Skill, and Sprint remain derived/read-only context from the selected resource. Changing the Resource immediately updates that context before saving.
 
 ### Next milestone
 
