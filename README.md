@@ -101,9 +101,24 @@ The Learning Board now has the first complete CRUD controls wired to the existin
 - Existing Supabase RLS policies enforce that active learners can only update/delete their own resources; Admins retain cross-user access.
 - Production verification completed so far: edit, progress change, status change, refresh persistence, and deletion have been verified with a production learner account.
 
+### Current milestone — Workspace data connected
+
+The remaining workspace areas are now backed by Supabase instead of fixed demo data:
+
+- **Goals** load per user, derive progress from that user's resources, and support creating goals.
+- **Skills** load per user, derive progress/invested time from that user's resources, and support creating skills.
+- **Sprints** load per user, support creating sprints, and can be linked to learning resources through `sprint_id`.
+- **Activity** is persisted in a dedicated `activities` table and logging an activity also updates resource progress.
+- **Analytics** calculates live metrics from the authenticated user's resources and logged activities.
+- New `goals`, `skills`, `sprints`, and `activities` tables use RLS with the same active-user/admin access model as resources.
+- A reproducible Supabase migration is stored at `supabase/migrations/20261003_workspace_data.sql`.
+- Existing users with no workspace data receive an initial set of goals, skills, and a starter sprint on first authenticated load.
+
+Implementation is complete; production UI verification of each new workspace area is the next check.
+
 ### Next milestone
 
-Verify the production CRUD flow end-to-end with the two existing test users: **edit → refresh → status change → progress change → delete → confirm persistence/isolation**. Once verified, record the result here before moving on to dedicated activity persistence.
+Verify production behavior for **Goals → Skills → Sprints → Activity → Analytics**, including creating one goal, one skill, and one sprint, logging one activity, refreshing, and confirming the values persist for the signed-in user.
 
 ## Architecture direction
 
