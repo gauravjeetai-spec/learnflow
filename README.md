@@ -2,16 +2,9 @@
 
 LearnFlow is a focused learning operating system for turning goals into skills, resources, sprints, activity, and measurable progress.
 
-## Run locally
+## Production deployment
 
-This MVP is a browser-first static application and has no build step:
-
-```bash
-cd learnflow
-python3 -m http.server 4173
-```
-
-Open `http://localhost:4173` in a browser.
+The production application is deployed from the GitHub `main` branch through Vercel. Supabase provides authentication and persistent application data.
 
 ## Included in this MVP
 
@@ -20,7 +13,7 @@ Open `http://localhost:4173` in a browser.
 - Goals, Skills, Sprints, Courses, Activity, and Analytics views
 - Quick-add learning resource flow
 - Progress updates, mark complete, and activity logging
-- Persistent browser demo data via `localStorage`
+- In-memory demo resources for the unauthenticated preview; authenticated resources are persisted in Supabase
 - Responsive mobile layout with bottom navigation
 - Dark mode preference persistence
 - Demo board: 2026 Growth & Business Learning
@@ -42,9 +35,9 @@ This README is the canonical project record for LearnFlow's implemented architec
 - Row Level Security is enabled. Authenticated users can only read, insert, update, or delete their own resources.
 - `updated_at` is maintained automatically by a database trigger.
 - The applied schema is also committed to `supabase/migrations/20261002_create_resources_table.sql` so the repository remains the source-controlled record of the database change.
-- Current row count after schema creation: 0. Existing demo resources are still frontend/localStorage data and have **not** been migrated.
+- Current row count after schema creation: 0. Demo resources remain preview data; authenticated resources are stored in Supabase.
 - The frontend now imports the shared Supabase client and loads `public.resources` for authenticated users.
-- The existing Add Learning flow now inserts/upserts into `public.resources` for authenticated users; guest mode continues to use localStorage/demo data.
+- The existing Add Learning flow now inserts/upserts into `public.resources` for authenticated users.
 - Progress updates, completion, and logged learning activity now persist resource changes through the same Supabase resource service when authenticated.
 - LearnFlow now exposes a simple email magic-link Log in / Log out control using Supabase Auth. The browser session is persisted by the Supabase client.
 - The app JavaScript has been syntax-validated after the persistence integration.
@@ -74,11 +67,11 @@ This README is the canonical project record for LearnFlow's implemented architec
 
 ### Auth callback hardening — 2026-10-03
 
-Magic-link requests now always use the stable production LearnFlow domain (`https://learnflow-steel.vercel.app/`) as the callback. This prevents a login link requested from a local development server or a deployment-specific Vercel URL from returning to the wrong location.
+Magic-link requests now always use the stable production LearnFlow domain (`https://learnflow-steel.vercel.app/`) as the callback. This prevents a login link from returning to a development or deployment-specific Vercel URL.
 
 The previous callback used a deployment-specific Vercel URL (`learnflow-61x1m7mar-gauravjeetai.vercel.app`). The latest production deployment confirms `learnflow-steel.vercel.app` as the stable production domain, so new magic links will use that URL.
 
-For the next login test, wait for the Supabase email-send rate limit to reset and request **one** fresh link. Do not repeatedly resend links. Links already issued with the previous callback continue to use the callback embedded when they were created.
+For the next login test, use one fresh magic link after the Supabase URL configuration has been corrected. Links already issued with an earlier callback continue to use the callback embedded when they were created.
 
 ### Next milestone
 
@@ -90,7 +83,7 @@ The UI is intentionally organized around the LearnFlow relationship:
 
 `Goal → Skill → Resource → Sprint → Activity → Progress`
 
-For a production deployment, replace the local persistence adapter in `app.js` with a Supabase data service using the schema below. UI entities already use stable IDs and many-to-many-friendly arrays for skills and sprint assignment.
+For a production deployment, use the Supabase data service in `app.js` using the schema below. UI entities already use stable IDs and many-to-many-friendly arrays for skills and sprint assignment.
 
 ## Supabase production setup
 
@@ -116,7 +109,7 @@ Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` only in brows
 
 ## Deployment
 
-For the current static MVP, deploy the `learnflow` directory to any static host. For the Supabase-backed production version, move the views into Next.js App Router, keep data access under `lib/` or `services/`, add migrations under `supabase/migrations/`, and deploy with Vercel.
+The current application is a static frontend deployed through Vercel. Supabase-backed data access remains in the browser-safe application layer, with database migrations under `supabase/migrations/`.
 
 ## Multi-User & Authentication
 
@@ -125,7 +118,7 @@ This app now supports **multiple users** logging in with Supabase Authentication
 ### 1. Enable Auth in Supabase
 1. Open the Supabase Authentication settings.
 2. LearnFlow currently uses **email magic-link authentication**.
-3. Add your local and deployed URLs to the allowed redirect/origin settings as required by Supabase.
+3. Add the production LearnFlow URL to the allowed redirect URL settings in Supabase.
 4. Set the Site URL to the deployed LearnFlow URL.
 
 ### 2. Run the SQL Tables
@@ -144,26 +137,15 @@ Go to https://supabase.com/dashboard/project/zltqnsylerhcbnslqcqm/SQL and run th
 - **Log out**: Same button - signs out and shows demo data
 - **Welcome message**: Shows user's first name on Overview page
 
-### 5. Deployment for Multiple Users
-```bash
-# 1. Set up Supabase auth as above
-# 2. Deploy to Vercel/Netlify
-vercel deploy --dir learnflow
-# OR
-npx netlify-cli deploy --dir learnflow
+### 5. Production deployment
 
-# 3. Add environment variables in your host:
-# - NEXT_PUBLIC_SUPABASE_URL=https://zltqnsylerhcbnslqcqm.supabase.co
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# 4. Deploy - users can now sign up and use the app independently
-```
+Push changes to the GitHub `main` branch. Vercel deploys the production application automatically. Supabase remains the authentication and persistent data service.
 
 ### 5. Known Limitations (Updated)
 - Authentication is email magic-link via Supabase (no Google/Apple SSO yet).
 - Mentor permissions are currently the same as an active learner; mentor-specific learner assignment/management is a later milestone.
 - Admins have cross-user resource access; finer-grained workspace permissions are a later milestone.
-- Demo data is available for guests; authenticated users use Supabase data.
+- Demo resources are available as an unauthenticated preview; authenticated users use Supabase data.
 - Realtime collaboration is a future milestone.
 
 ## Latest verification: authentication key fix (October 2026)
