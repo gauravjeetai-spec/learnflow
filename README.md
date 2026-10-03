@@ -129,20 +129,24 @@ The remaining workspace area requiring production UI verification is Analytics.
 - Analytics: the production dashboard reflected the authenticated user's live data, showing **5% overall progress**, **0% completion rate**, **0h 30m learning time**, **1 active learning day**, and **1 resource**. The goal breakdown also showed 5% progress for Build Business Acumen and 0% for the other seeded goals.
 - This confirms the workspace views are reading the authenticated user's Supabase-backed resources and activities rather than relying on the previous fixed analytics values.
 
-### Current milestone — Resource-to-Sprint workflow
+### Verified milestone — 2026-10-03 (Resource-to-Sprint workflow)
 
-Sprint selection is now implemented in the learning resource workflow:
+**The Resource → Sprint relationship is now production-verified.**
 
-- The **Add Learning** form now includes a Sprint selector populated from the signed-in user's loaded sprints.
-- The **Edit Learning** form now includes the same Sprint selector and can change or clear the assigned sprint.
+- The **Add Learning** form includes a Sprint selector populated from the signed-in user's loaded sprints.
+- The **Edit Learning** form includes the same Sprint selector and can change or clear the assigned sprint.
 - The selected sprint is persisted through the existing `resources.sprint_id` Supabase field.
-- Resource details now display the assigned sprint.
-- Sprint resource counts and progress automatically reflect resources assigned through `sprint_id`.
-- The implementation was checked in the repository after the change; production UI verification is the next step.
+- Resource details show the assigned sprint.
+- Production verification confirmed that an existing resource assigned to **Test Sprint** still showed **Test Sprint** after a full browser refresh.
+- Sprint resource counts and progress are derived from resources assigned through `sprint_id`.
+
+This completes the first end-to-end relationship chain in the workspace:
+
+`Goal → Skill → Learning Resource → Sprint`
 
 ### Next milestone
 
-Verify the production **Resource → Sprint** workflow by assigning a new or existing learning resource to **Test Sprint**, refreshing the browser, and confirming the assignment remains and the sprint shows the resource.
+Connect the Sprint → Activity workflow more explicitly: when logging an Activity, show the selected resource's assigned Sprint and make the activity history clearly traceable back through Resource → Sprint → Goal/Skill.
 
 ## Architecture direction
 
