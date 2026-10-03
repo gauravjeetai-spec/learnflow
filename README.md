@@ -114,7 +114,7 @@ The remaining workspace areas are now backed by Supabase instead of fixed demo d
 - A reproducible Supabase migration is stored at `supabase/migrations/20261003_workspace_data.sql`.
 - Existing users with no workspace data receive an initial set of goals, skills, and a starter sprint on first authenticated load.
 
-**Production verification completed for Goals:** after signing in to the production LearnFlow application, all four seeded goals appeared successfully: Build Business Acumen, Become Better at AI, Improve Leadership, and Master Marketing.
+**Production verification completed for Goals and Skills:** after signing in to the production LearnFlow application, all four seeded goals appeared successfully: Build Business Acumen, Become Better at AI, Improve Leadership, and Master Marketing. The six seeded skills also appeared successfully: Financial Modeling, AI Engineering, Business Strategy, Leadership, Marketing, and Sales.
 
 The remaining workspace areas still require production UI verification.
 
