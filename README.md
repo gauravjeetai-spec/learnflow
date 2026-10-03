@@ -280,3 +280,7 @@ The mobile header now keeps the Log in/Log out control visible on small screens.
 ### Authenticated overview uses live user data — implemented
 
 The Overview now separates guest and authenticated experiences. Logged-out visitors continue to see the curated demo workspace, while authenticated users see metrics, sprint information, learning activity, focus items, attention counts, and progress calculated from their own Supabase-backed resources and activities. Empty user data produces clear zero/empty states instead of demo values.
+
+### Guest Overview entrance animation — implemented
+
+The logged-out demo Overview now uses a subtle bottom-to-top entrance animation with staggered sections, while authenticated live-data views are unchanged. The animation also respects the user's reduced-motion preference.
