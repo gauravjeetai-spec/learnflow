@@ -312,3 +312,7 @@ Resource detail views now hydrate activity from persisted Supabase activities, d
 ### Goal and Skill selectors in resource editing — implemented
 
 The Edit Learning modal now uses dropdowns populated from the workspace Goals and Skills tabs instead of free-text fields. Existing resource values are preserved even if they are no longer present in the current workspace lists. Each selector includes a Create new option; newly created Goals or Skills are added to the workspace and automatically selected when the edit modal reopens.
+
+### Edit Learning selector regression — fixed
+
+Fixed a JavaScript syntax regression introduced while adding Goal/Skill creation callbacks to the Edit Learning modal. The application render/auth initialization path is restored; no user data or Supabase records were changed by this fix.
