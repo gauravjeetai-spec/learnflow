@@ -296,3 +296,7 @@ Admins now see workspace Goals, Skills, and Sprints across active Learner and Me
 ### Workspace navigation counts — implemented
 
 The sidebar counts for Goals, Skills, and Sprints are now calculated from the same visible records rendered in each corresponding tab. Admin counts include active Learner and Mentor workspace items; Learner/Mentor counts reflect their own workspace, and guest counts reflect the demo workspace.
+
+### Admin workspace creation — implemented
+
+Admins can now create Goals, Skills, and Sprints from the same workspace tabs while still seeing the shared Learner and Mentor records. Admin workspace records are included in the corresponding tab and sidebar counts.
