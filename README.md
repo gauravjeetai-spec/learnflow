@@ -300,3 +300,7 @@ The sidebar counts for Goals, Skills, and Sprints are now calculated from the sa
 ### Admin workspace creation — implemented
 
 Admins can now create Goals, Skills, and Sprints from the same workspace tabs while still seeing the shared Learner and Mentor records. Admin workspace records are included in the corresponding tab and sidebar counts.
+
+### Learning board drag-and-drop — implemented
+
+Learning resource cards can now be dragged between status lanes. Dropping a card updates its persisted resource status in Supabase; moving into Completed sets progress to 100%, while moving between other lanes preserves the existing progress. The target lane highlights during drag, and failed saves roll the card back.
