@@ -298,11 +298,38 @@ function sprints(){return `<div class="page"><div class="page-heading"><div><div
 function courses(){return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Your learning library</div><h1>Courses & resources</h1><p>Everything you want to learn, in one calm place.</p></div><button class="primary-button" id="add-learning">＋ Add learning</button></div><div class="stats-grid"><div class="stat-card"><span class="stat-label">All resources</span><div class="stat-value">${resources.length}</div><span class="stat-meta">Across 4 goals</span></div><div class="stat-card"><span class="stat-label">Completed</span><div class="stat-value">${resources.filter(r=>r.progress===100).length}</div><span class="stat-meta positive">Keep going</span></div><div class="stat-card"><span class="stat-label">In progress</span><div class="stat-value">${resources.filter(r=>r.column==='in-progress').length}</div><span class="stat-meta">2 due soon</span></div><div class="stat-card"><span class="stat-label">Hours invested</span><div class="stat-value">29<span style="font-size:13px">h</span></div><span class="stat-meta">This quarter</span></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>All resources</strong><button class="filter-button">＋ Filter</button></div><table class="data-table"><thead><tr><th>Resource</th><th>Type</th><th>Status</th><th>Progress</th><th>Owner</th><th>Target date</th></tr></thead><tbody>${resources.map(r=>`<tr data-id="${r.id}"><td><span class="table-title">${esc(r.title)}</span><span class="table-type">${r.provider}</span></td><td>${r.type}</td><td><span class="status-pill ${r.progress===100?'done':r.column==='in-progress'?'progress':''}">${r.status}</span></td><td>${r.progress}%</td><td><span class="avatar avatar-${r.color}">${r.owner}</span></td><td>${r.due}</td></tr>`).join('')}</tbody></table></section></div>`}
 function activity(){return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Your learning history</div><h1>Activity</h1><p>Small actions add up to meaningful outcomes.</p></div><button class="primary-button" id="log-activity">＋ Log activity</button></div><div class="activity-list">${activitiesData.length?activitiesData.map((a,i)=>{const r=resources.find(x=>x.id===a.resource_id);const sprint=sprintsData.find(sp=>sp.id===r?.sprint_id);const d=new Date(a.occurred_at);const goal=r?.goal||'No goal';const skill=(r?.skills||[]).join(', ')||'No skill';return `<div class="activity-day">${i===0?'Recent activity':d.toLocaleDateString()}</div><div class="activity-item"><div class="activity-avatar">↗</div><div class="activity-copy"><strong>${esc(user?.email?.split('@')[0]||'You')}</strong> logged <strong>${a.duration_minutes} minutes</strong> of ${esc(r?.title||'learning')}<small>${esc(a.activity_type)} · Sprint: ${esc(sprint?.title||'None')} · Goal: ${esc(goal)} · Skill: ${esc(skill)}${a.notes?' · '+esc(a.notes):''} · ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</small></div></div>`}).join(''):'<div class="empty-state"><strong>No activity yet</strong><p>Log your first learning session from a resource.</p></div>'}</div></div>`}
 function analytics(){const total=resources.length,completed=resources.filter(r=>r.progress===100).length,inProgress=resources.filter(r=>r.column==='in-progress').length,progress=total?Math.round(resources.reduce((a,r)=>a+r.progress,0)/total):0;const totalMinutes=activitiesData.reduce((a,x)=>a+Number(x.duration_minutes||0),0);const activeDays=new Set(activitiesData.map(x=>new Date(x.occurred_at).toISOString().slice(0,10))).size;const byGoal=goalsData.map(g=>{const rs=resources.filter(r=>r.goal===g.title);return [g.title,rs.length?Math.round(rs.reduce((a,r)=>a+r.progress,0)/rs.length):0]});return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Make progress visible</div><h1>Analytics</h1><p>Understand how your learning is moving, not just where it is.</p></div></div><div class="metric-grid"><div class="metric-card"><span class="stat-label">Overall progress</span><strong>${progress}%</strong><span class="stat-meta">${total} resources</span></div><div class="metric-card"><span class="stat-label">Completion rate</span><strong>${total?Math.round(completed/total*100):0}%</strong><span class="stat-meta">${completed} of ${total} resources</span></div><div class="metric-card"><span class="stat-label">Learning time</span><strong>${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</strong><span class="stat-meta">Logged activity</span></div><div class="metric-card"><span class="stat-label">Active learning days</span><strong>${activeDays}</strong><span class="stat-meta">Recorded sessions</span></div></div><div class="analytics-grid" style="margin-top:13px"><section class="panel"><div class="panel-header"><h3>Resource status</h3><span class="panel-link">${total} total</span></div><div class="mini-stats" style="justify-content:center;margin:30px 0"><div><strong>${completed}</strong><span>completed</span></div><div><strong>${inProgress}</strong><span>in progress</span></div><div><strong>${total-completed-inProgress}</strong><span>other</span></div></div></section><section class="panel"><div class="panel-header"><h3>Learning time</h3><span class="panel-link">All logged activity</span></div><div class="momentum-score"><strong>${(totalMinutes/60).toFixed(1)}h</strong><small>LOGGED</small></div><p class="momentum-copy">Keep logging sessions to build a useful personal learning history.</p></section></div><section class="panel" style="margin-top:13px"><div class="panel-header"><h3>Progress by goal</h3><span class="panel-link">Live from resources</span></div>${byGoal.map(x=>`<div class="progress-row"><span>${esc(x[0])}</span><b>${x[1]}%</b></div><div class="progress-track" style="margin-bottom:12px"><div class="progress-fill" style="width:${x[1]}%"></div></div>`).join('')||'<div class="empty-state">Create goals and resources to see progress here.</div>'}</section></div>`}
+function animateHighlightNumbers(){
+  const items=document.querySelectorAll('.stat-value,.metric-card > strong,.momentum-score > strong,.attention-item > strong');
+  if(!items.length)return;
+  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  items.forEach(el=>{
+    const targetText=el.textContent.trim();
+    const match=targetText.match(/^(-?\\d+(?:\\.\\d+)?)(.*)$/);
+    if(!match)return;
+    const target=Number(match[1]);
+    const suffix=match[2];
+    const decimals=match[1].includes('.')?(match[1].split('.')[1]?.length||1):0;
+    if(reduced){el.textContent=target.toFixed(decimals)+suffix;return}
+    const start=performance.now();
+    const duration=850;
+    const ease=t=>1-Math.pow(1-t,3);
+    const tick=now=>{
+      const progress=Math.min(1,(now-start)/duration);
+      const value=target*ease(progress);
+      el.textContent=(decimals?value.toFixed(decimals):Math.round(value))+suffix;
+      if(progress<1)requestAnimationFrame(tick);
+      else el.textContent=target.toFixed(decimals)+suffix;
+    };
+    el.textContent=(decimals?'0.0':'0')+suffix;
+    requestAnimationFrame(tick);
+  });
+}
 function render(){
   if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
   const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,login:loginView,'name-setup':nameSetup};
   root.innerHTML=views[currentView]?views[currentView]():overview();
   bindEvents();
+  requestAnimationFrame(animateHighlightNumbers);
 }
 async function deleteResource(id){
   if(!user||!supa){resources=resources.filter(x=>x.id!=id);return true}
