@@ -32,3 +32,5 @@
   }
 }
 
+
+.course-card[draggable="true"]{cursor:grab}.course-card.dragging{opacity:.45;transform:scale(.98)}.board-column.drag-over{background:var(--accent-soft);border-radius:10px;outline:2px dashed var(--accent);outline-offset:4px}
