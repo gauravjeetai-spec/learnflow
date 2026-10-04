@@ -292,3 +292,7 @@ Prominent dashboard metrics now animate from zero to their actual value when a v
 ### Admin learner/mentor workspace visibility — implemented
 
 Admins now see workspace Goals, Skills, and Sprints across active Learner and Mentor accounts, with the owner name and role shown on each item. The Admin view excludes the Admin's own workspace records from these shared learner/mentor views. Starter workspace seeding is also disabled for Admin accounts so the Admin session cannot create another set of starter records.
+
+### Workspace navigation counts — implemented
+
+The sidebar counts for Goals, Skills, and Sprints are now calculated from the same visible records rendered in each corresponding tab. Admin counts include active Learner and Mentor workspace items; Learner/Mentor counts reflect their own workspace, and guest counts reflect the demo workspace.
