@@ -308,3 +308,7 @@ Learning resource cards can now be dragged between status lanes. Dropping a card
 ### Resource detail activity, notes, and history — fixed
 
 Resource detail views now hydrate activity from persisted Supabase activities, display logged sessions in the Activity tab, show saved resource notes in Notes, and provide a working History tab with creation/update timestamps and activity events. Tab switching is interactive, and newly logged activities immediately appear in the open resource's activity data.
+
+### Goal and Skill selectors in resource editing — implemented
+
+The Edit Learning modal now uses dropdowns populated from the workspace Goals and Skills tabs instead of free-text fields. Existing resource values are preserved even if they are no longer present in the current workspace lists. Each selector includes a Create new option; newly created Goals or Skills are added to the workspace and automatically selected when the edit modal reopens.
