@@ -281,6 +281,6 @@ The mobile header now keeps the Log in/Log out control visible on small screens.
 
 The Overview now separates guest and authenticated experiences. Logged-out visitors continue to see the curated demo workspace, while authenticated users see metrics, sprint information, learning activity, focus items, attention counts, and progress calculated from their own Supabase-backed resources and activities. Empty user data produces clear zero/empty states instead of demo values.
 
-### Guest Overview entrance animation — implemented
+### Global page entrance animation — implemented
 
-The logged-out demo Overview now uses a subtle bottom-to-top entrance animation with staggered sections, while authenticated live-data views are unchanged. The animation also respects the user's reduced-motion preference.
+All LearnFlow top-level views now use the same subtle bottom-to-top entrance animation, whether the visitor is logged out or authenticated. This applies consistently when navigating between workspace pages and authentication/access screens, while respecting the user's reduced-motion preference.
