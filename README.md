@@ -304,3 +304,7 @@ Admins can now create Goals, Skills, and Sprints from the same workspace tabs wh
 ### Learning board drag-and-drop — implemented
 
 Learning resource cards can now be dragged between status lanes. Dropping a card updates its persisted resource status in Supabase; moving into Completed sets progress to 100%, while moving between other lanes preserves the existing progress. The target lane highlights during drag, and failed saves roll the card back.
+
+### Resource detail activity, notes, and history — fixed
+
+Resource detail views now hydrate activity from persisted Supabase activities, display logged sessions in the Activity tab, show saved resource notes in Notes, and provide a working History tab with creation/update timestamps and activity events. Tab switching is interactive, and newly logged activities immediately appear in the open resource's activity data.
