@@ -388,8 +388,8 @@ function openEditResource(id){
     content.innerHTML=tab.dataset.detailTab==='activity'?activityRows():tab.dataset.detailTab==='notes'?notesView():historyView();
   });
   document.getElementById('cancel-modal').onclick=closeModal;
-  document.getElementById('edit-goal-select').onchange=()=>{if(document.getElementById('edit-goal-select').value==='__create_goal__'){openGoalModal(created=>openEditResource(id))}};
-  document.getElementById('edit-skill-select').onchange=()=>{if(document.getElementById('edit-skill-select').value==='__create_skill__'){openSkillModal(created=>openEditResource(id))}};
+  document.getElementById('edit-goal-select').onchange=()=>{if(document.getElementById('edit-goal-select').value==='__create_goal__'){openGoalModal(created=>{r.goal=created.title;openEditResource(id)})}};
+  document.getElementById('edit-skill-select').onchange=()=>{if(document.getElementById('edit-skill-select').value==='__create_skill__'){openSkillModal(created=>{r.skills=[created.title];openEditResource(id)})}};
   document.getElementById('edit-resource-form').onsubmit=async e=>{
     e.preventDefault();
     const f=new FormData(e.target);
