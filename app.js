@@ -498,7 +498,6 @@ function bindEvents(){
       const previous={column:card.column,status:card.status,progress:card.progress};
       card.column=target;card.status=target==='in-progress'?'In Progress':target==='completed'?'Completed':target==='practice'?'Practice / Review':target==='planned'?'Planned':'Backlog';
       if(target==='completed')card.progress=100;
-      if(target!=='completed'&&card.progress===100)card.progress=95;
       render();
       if(await persistResource(card))toast('Moved to '+card.status);else{Object.assign(card,previous);render();toast('Could not move resource')};
     };
