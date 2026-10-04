@@ -284,3 +284,7 @@ The Overview now separates guest and authenticated experiences. Logged-out visit
 ### Global page entrance animation — implemented
 
 All LearnFlow top-level views now use the same subtle bottom-to-top entrance animation, whether the visitor is logged out or authenticated. This applies consistently when navigating between workspace pages and authentication/access screens, while respecting the user's reduced-motion preference.
+
+### Prominent metric count-up animation — implemented
+
+Prominent dashboard metrics now animate from zero to their actual value when a view renders. The effect is intentionally limited to the larger highlighted numbers (primary stats, analytics metrics, momentum score, and attention counts), rather than every number on the page, and it respects the user's reduced-motion preference.
