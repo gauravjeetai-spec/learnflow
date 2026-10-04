@@ -316,3 +316,7 @@ The Edit Learning modal now uses dropdowns populated from the workspace Goals an
 ### Edit Learning selector regression — fixed
 
 Fixed a JavaScript syntax regression introduced while adding Goal/Skill creation callbacks to the Edit Learning modal. The application render/auth initialization path is restored; no user data or Supabase records were changed by this fix.
+
+### Resource detail activity hydration — strengthened
+
+Resource detail Activity and History views now derive entries directly from the loaded workspace activity records by resource ID, rather than relying only on a denormalized resource activity property. This keeps the detail view aligned with the Activity navigation data and persisted Supabase records.
