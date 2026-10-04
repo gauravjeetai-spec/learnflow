@@ -304,7 +304,7 @@ function animateHighlightNumbers(){
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   items.forEach(el=>{
     const targetText=el.textContent.trim();
-    const match=targetText.match(/^(-?\\d+(?:\\.\\d+)?)(.*)$/);
+    const match=targetText.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
     if(!match)return;
     const target=Number(match[1]);
     const suffix=match[2];
