@@ -15,30 +15,19 @@
 .auth-help{text-align:center;color:var(--muted);font-size:10px;line-height:1.5;margin-top:15px}
 .auth-card button:disabled{opacity:.65;cursor:wait}
 @media(max-width:700px){.auth-page{min-height:calc(100vh - 62px);padding:20px 14px}.auth-card{padding:26px 22px}.auth-card h1{font-size:24px}}
-.demo-overview > .page-heading,
-.demo-overview > .stats-grid,
-.demo-overview > .overview-grid,
-.demo-overview > .panel{
-  opacity:0;
-  transform:translateY(55px);
-  animation:demoOverviewRise .7s cubic-bezier(.22,.8,.28,1) forwards;
+/* Page entrance animation — applies consistently to guest and authenticated views. */
+#view-container > .page,
+#view-container > .auth-page{
+  animation:pageRise .7s cubic-bezier(.22,.8,.28,1) both;
+  will-change:transform,opacity;
 }
-.demo-overview > .page-heading{animation-delay:.05s}
-.demo-overview > .stats-grid{animation-delay:.14s}
-.demo-overview > .overview-grid:nth-of-type(3){animation-delay:.23s}
-.demo-overview > .overview-grid:nth-of-type(4){animation-delay:.32s}
-.demo-overview > .panel:last-child{animation-delay:.41s}
-@keyframes demoOverviewRise{
+@keyframes pageRise{
   from{opacity:0;transform:translateY(55px)}
   to{opacity:1;transform:translateY(0)}
 }
 @media(prefers-reduced-motion:reduce){
-  .demo-overview > .page-heading,
-  .demo-overview > .stats-grid,
-  .demo-overview > .overview-grid,
-  .demo-overview > .panel{
-    opacity:1;
-    transform:none;
+  #view-container > .page,
+  #view-container > .auth-page{
     animation:none;
   }
 }
