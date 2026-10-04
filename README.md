@@ -288,3 +288,7 @@ All LearnFlow top-level views now use the same subtle bottom-to-top entrance ani
 ### Prominent metric count-up animation — implemented
 
 Prominent dashboard metrics now animate from zero to their actual value when a view renders. The effect is intentionally limited to the larger highlighted numbers (primary stats, analytics metrics, momentum score, and attention counts), rather than every number on the page, and it respects the user's reduced-motion preference.
+
+### Admin learner/mentor workspace visibility — implemented
+
+Admins now see workspace Goals, Skills, and Sprints across active Learner and Mentor accounts, with the owner name and role shown on each item. The Admin view excludes the Admin's own workspace records from these shared learner/mentor views. Starter workspace seeding is also disabled for Admin accounts so the Admin session cannot create another set of starter records.
