@@ -189,7 +189,7 @@ function updateRoleUI(){
   const userName=document.getElementById('user-name');
   if(userName)userName.textContent=profile?.display_name||user?.email?.split('@')[0]||'Guest';
 }
-async function authAction(){
+async async function requestAccountDeletion(){if(!user||!supa)return;const {data:existing}=await supa.from('account_deletion_requests').select('id,status').eq('user_id',user.id).eq('status','pending').maybeSingle();if(existing){toast('Your delete request is already with an Admin');return}const {error}=await supa.from('account_deletion_requests').insert({user_id:user.id});if(error){toast('Could not send delete request: '+error.message);return}toast('Delete request sent to Admin');}function authAction(){
   if(user){const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
   currentView='login';
   document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.remove('active'));
@@ -198,7 +198,7 @@ async function authAction(){
   render();
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view[0].toUpperCase()+view.slice(1);render()}
+function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view[0].toUpperCase()+view.slice(1);render()}
 function resourceCard(r){
   return `<article class="course-card" draggable="true" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${r.goal}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${r.due}</span><span class="owner-badge" title="${esc(r.ownerName)}"><span class="avatar avatar-${r.color}">${r.owner}</span><span class="owner-name">${esc(r.ownerName)}</span></span></div></article>`;
 }
@@ -253,7 +253,14 @@ function accessGate(){
   const copy=status==='pending'?'Your LearnFlow account is created, but an admin needs to approve your access before you can use the workspace.':'Your LearnFlow access is currently unavailable. Please contact the LearnFlow admin.';
   return `<div class="page"><div class="empty-state" style="max-width:680px;margin:70px auto;padding:40px"><div class="eyebrow">Account access</div><h1 style="margin:8px 0 10px">${title}</h1><p>${copy}</p><p class="stat-meta" style="margin-top:18px">Signed in as <strong>${esc(user?.email||'')}</strong></p><button class="secondary-button" id="refresh-access" style="margin-top:18px">Check access again</button></div></div>`
 }
-function admin(){
+function settings(){return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Your LearnFlow</div><h1>Settings</h1><p>Personalize how LearnFlow works for you.</p></div></div>
+<section class="panel settings-panel"><div class="panel-header"><h3>Profile</h3></div><form id="settings-profile-form"><div class="form-grid"><div class="field"><label>Preferred name</label><input name="display_name" value="${esc(profile?.display_name||'')}" required></div><div class="field"><label>Email</label><input value="${esc(user?.email||'')}" disabled></div></div><div class="modal-actions"><button class="primary-button">Save profile</button></div></form></section>
+<section class="panel settings-panel"><div class="panel-header"><h3>Learning preferences</h3></div><div class="settings-grid"><div class="setting-row"><div><strong>Weekly learning target</strong><small>Choose the pace you want to aim for.</small></div><select><option>3 hours</option><option>5 hours</option><option selected>7 hours</option><option>10 hours</option></select></div><div class="setting-row"><div><strong>Daily learning target</strong><small>A simple daily commitment.</small></div><select><option>30 minutes</option><option selected>45 minutes</option><option>60 minutes</option><option>90 minutes</option></select></div><div class="setting-row"><div><strong>Preferred session length</strong><small>Your usual learning block.</small></div><select><option>25 minutes</option><option selected>45 minutes</option><option>60 minutes</option><option>90 minutes</option></select></div><div class="setting-row"><div><strong>Default priority</strong><small>Used when creating new learning resources.</small></div><select><option>Low</option><option selected>Medium</option><option>High</option></select></div></div></section>
+<section class="panel settings-panel"><div class="panel-header"><h3>Notifications</h3></div><div class="settings-list"><label><span>Learning reminders</span><input type="checkbox" checked disabled></label><label><span>Sprint deadline reminders</span><input type="checkbox" checked disabled></label><label><span>Overdue learning reminders</span><input type="checkbox" checked disabled></label><label><span>Weekly learning summary</span><input type="checkbox" checked disabled></label><label><span>Mentor feedback</span><input type="checkbox" checked disabled></label></div><p class="settings-note">Notification controls will become active when LearnFlow's notification service is enabled.</p></section>
+<section class="panel settings-panel"><div class="panel-header"><h3>Privacy & visibility</h3></div><p class="settings-copy">Your Mentor can access the learner information permitted by LearnFlow's role model. Administrators can access workspace information for platform management.</p></section>
+<section class="panel settings-panel"><div class="panel-header"><h3>Appearance & accessibility</h3></div><div class="settings-list"><label><span>Theme</span><select id="settings-theme"><option>System</option><option>Light</option><option>Dark</option></select></label><label><span>Reduce motion</span><input id="settings-reduce-motion" type="checkbox"></label></div></section>
+<section class="panel settings-panel danger-panel"><div class="panel-header"><h3>Account</h3></div><div class="settings-actions"><button class="secondary-button" id="settings-signout">Sign out</button><button class="danger-button" id="settings-delete-request">Request account deletion</button></div><p class="settings-note">Account deletion is reviewed by an Admin. Your account will not be deleted immediately.</p></section>
+</div>`}function admin(){
   const rows=profiles.map(p=>`<tr>
     <td><strong>${esc(p.display_name||'Unnamed user')}</strong><span class="table-type">${esc(p.user_id)}</span></td>
     <td><span class="status-pill ${p.access_status==='active'?'done':p.access_status==='pending'?'practice':''}">${esc(p.access_status)}</span></td>
@@ -449,6 +456,10 @@ function logActivity(id){const initialId=id??resources[0]?.id;if(!resources.leng
 
 function bindEvents(){
   document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
+  document.getElementById('settings-signout')?.addEventListener('click',()=>authAction());
+  document.getElementById('settings-delete-request')?.addEventListener('click',requestAccountDeletion);
+  document.getElementById('settings-profile-form')?.addEventListener('submit',async e=>{e.preventDefault();const name=String(new FormData(e.target).get('display_name')||'').trim();if(!name)return;const {data,error}=await supa.from('profiles').update({display_name:name}).eq('user_id',user.id).select('*').single();if(error){toast('Could not save profile: '+error.message);return}profile=data;const {error:authError}=await supa.auth.updateUser({data:{full_name:name}});if(authError)toast('Profile saved, but authentication name sync failed');else toast('Profile saved');updateRoleUI();render()});
+
   document.getElementById('name-form')?.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!user||!supa)return;
