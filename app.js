@@ -87,6 +87,7 @@ async function updateAccess(userId, role, accessStatus){
   render();
   return true;
 }
+async function loadDeletionRequests(){if(!supa||profile?.role!=='admin'||profile?.access_status!=='active'){deletionRequests=[];return}const {data,error}=await supa.from('account_deletion_requests').select('*').order('requested_at',{ascending:false});if(error){console.error(error);deletionRequests=[];return}deletionRequests=data||[]}
 async function loadResources(){
   if(!user||!supa){resetDemoWorkspace();return}
   const {data,error}=await supa.from('resources').select('*').order('created_at',{ascending:false});
@@ -159,6 +160,7 @@ async function initSupabase(){
 async function refreshSessionState(){
   await loadProfile();
   await loadProfiles();
+  await loadDeletionRequests();
   updateAuthButton();
   updateRoleUI();
   if(!user){
@@ -268,7 +270,9 @@ function settings(){return `<div class="page"><div class="page-heading"><div><di
     <td><select data-access-user="${p.user_id}" ${p.user_id===user?.id?'disabled':''}><option value="pending" ${p.access_status==='pending'?'selected':''}>Pending</option><option value="active" ${p.access_status==='active'?'selected':''}>Active</option><option value="suspended" ${p.access_status==='suspended'?'selected':''}>Suspended</option><option value="rejected" ${p.access_status==='rejected'?'selected':''}>Rejected</option></select></td>
     <td>${p.user_id===user?.id?'<span class="stat-meta">You</span>':`<button class="secondary-button" style="padding:6px 9px" data-approve-user="${p.user_id}">${p.access_status==='active'?'Update':'Approve'}</button>`}</td>
   </tr>`).join('');
-  return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Workspace administration</div><h1>User access</h1><p>Approve users and assign Admin, Mentor, or Learner roles.</p></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>${profiles.length} users</strong><span class="stat-meta">Access is enforced by Supabase RLS</span></div><table class="data-table"><thead><tr><th>User</th><th>Status</th><th>Role</th><th>Access</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No users yet.</td></tr>'}</tbody></table></section></div>`
+  const requests=deletionRequests.filter(x=>x.status==='pending');
+  return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Workspace administration</div><h1>User access</h1><p>Approve users, assign roles, and review account deletion requests.</p></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>${profiles.length} users</strong><span class="stat-meta">Access is enforced by Supabase RLS</span></div><table class="data-table"><thead><tr><th>User</th><th>Status</th><th>Role</th><th>Access</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No users yet.</td></tr>'}</tbody></table></section><section class="panel list-panel" style="margin-top:13px"><div class="table-toolbar"><strong>Account deletion requests</strong><span class="stat-meta">${requests.length} pending</span></div><table class="data-table"><thead><tr><th>User</th><th>Requested</th><th>Status</th></tr></thead><tbody>${requests.map(x=>{const p=profiles.find(y=>y.user_id===x.user_id);return `<tr><td><strong>${esc(p?.display_name||'Unnamed user')}</strong><span class="table-type">${esc(x.user_id)}</span></td><td>${new Date(x.requested_at).toLocaleString()}</td><td><span class="status-pill practice">Pending review</span></td></tr>`}).join('')||'<tr><td colspan="3">No pending deletion requests.</td></tr>'}</tbody></table></section></div>`;
+
 }
 function overview(){
   const now=new Date();
