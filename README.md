@@ -320,3 +320,7 @@ Fixed a JavaScript syntax regression introduced while adding Goal/Skill creation
 ### Resource detail activity hydration — strengthened
 
 Resource detail Activity and History views now derive entries directly from the loaded workspace activity records by resource ID, rather than relying only on a denormalized resource activity property. This keeps the detail view aligned with the Activity navigation data and persisted Supabase records.
+
+### Learner Settings and account deletion requests — implemented
+
+Added a Learner Settings page covering profile, learning preferences, notifications, privacy/visibility, appearance/accessibility, and account controls. Preferred name updates remain synchronized with the authentication profile. Account deletion is request-only: learners receive an immediate confirmation toast and the request is stored in Supabase for Admin review; no account is deleted automatically. Admin User Access now includes pending deletion requests.
