@@ -191,7 +191,7 @@ function updateRoleUI(){
   const userName=document.getElementById('user-name');
   if(userName)userName.textContent=profile?.display_name||user?.email?.split('@')[0]||'Guest';
 }
-async async function requestAccountDeletion(){if(!user||!supa)return;const {data:existing}=await supa.from('account_deletion_requests').select('id,status').eq('user_id',user.id).eq('status','pending').maybeSingle();if(existing){toast('Your delete request is already with an Admin');return}const {error}=await supa.from('account_deletion_requests').insert({user_id:user.id});if(error){toast('Could not send delete request: '+error.message);return}toast('Delete request sent to Admin');}function authAction(){
+async function requestAccountDeletion(){if(!user||!supa)return;const {data:existing}=await supa.from('account_deletion_requests').select('id,status').eq('user_id',user.id).eq('status','pending').maybeSingle();if(existing){toast('Your delete request is already with an Admin');return}const {error}=await supa.from('account_deletion_requests').insert({user_id:user.id});if(error){toast('Could not send delete request: '+error.message);return}toast('Delete request sent to Admin');}function authAction(){
   if(user){const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
   currentView='login';
   document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.remove('active'));
