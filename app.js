@@ -365,7 +365,7 @@ function animateHighlightNumbers(){
 }
 function render(){
   if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,login:loginView,'name-setup':nameSetup};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
   root.innerHTML=views[currentView]?views[currentView]():overview();
   bindEvents();
   updateNavCounts();
