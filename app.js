@@ -53,6 +53,7 @@ function resetDemoWorkspace(){
 let user=null;
 let profile=null;
 let profiles=[];
+let deletionRequests=[];
 let resources=demoResources.map(r=>({...r,skills:[...r.skills],activity:r.activity.map(a=>[...a])}));
 let goalsData=[], skillsData=[], sprintsData=[], activitiesData=[];
 let currentView='overview'; let searchTerm=''; let activeFilter='All';
