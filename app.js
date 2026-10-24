@@ -555,12 +555,28 @@ function animateHighlightNumbers(){
   });
 }
 function render(){
-  if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
+  if(!root)return;
   const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
-  root.innerHTML=views[currentView]?views[currentView]():overview();
-  bindEvents();
-  updateNavCounts();
-  requestAnimationFrame(animateHighlightNumbers);
+  try{
+    if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){
+      root.innerHTML=accessGate();
+    }else{
+      const viewRenderer=views[currentView]||overview;
+      root.innerHTML=viewRenderer();
+    }
+  }catch(error){
+    console.error('LearnFlow view render failed:',error);
+    currentView='overview';
+    try{root.innerHTML=overview()}catch(fallbackError){
+      console.error('LearnFlow overview fallback failed:',fallbackError);
+      root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Please refresh this page. Your saved workspace data is not affected.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+    }
+  }
+  try{bindEvents()}catch(error){console.error('LearnFlow event binding failed:',error)}
+  try{updateNavCounts()}catch(error){console.error('LearnFlow navigation count update failed:',error)}
+  requestAnimationFrame(()=>{try{animateHighlightNumbers()}catch(error){console.error('LearnFlow number animation failed:',error)}});
+  const recover=document.getElementById('recover-app');
+  if(recover)recover.onclick=()=>window.location.reload();
 }
 async function deleteResource(id){
   if(!user||!supa){resources=resources.filter(x=>x.id!=id);return true}
