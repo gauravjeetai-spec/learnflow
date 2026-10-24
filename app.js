@@ -769,6 +769,7 @@ function bindEvents(){
 initSupabase();
 
 initSupabase();
+initSupabase();
 document.getElementById('auth-button')?.addEventListener('click',authAction);
 document.getElementById('theme-toggle')?.addEventListener('click',async()=>{const next=preferences.theme==='system'?'dark':preferences.theme==='dark'?'light':'system';await savePreferences({theme:next});if(user)await trackAudit('theme_changed','settings',user.id,{theme:next});render()});
 document.getElementById('search-trigger')?.addEventListener('click',()=>{const q=prompt('Search courses, goals, skills or activity');if(q){searchTerm=q;setView('board');toast(`Showing results for “${q}”`)}});
