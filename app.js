@@ -135,8 +135,10 @@ async function trackAudit(action,targetType=null,targetId=null,metadata={}){
 }
 function applyTheme(){
   const theme=preferences.theme||'system';
-  document.body.classList.toggle('dark',theme==='dark');
-  document.body.classList.toggle('light-theme',theme==='light');
+  const systemDark=theme==='system'&&window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  const dark=theme==='dark'||systemDark;
+  document.body.classList.toggle('dark',dark);
+  document.body.classList.toggle('light-theme',!dark);
   const toggle=document.getElementById('theme-toggle');
   if(toggle)toggle.textContent=theme==='dark'?'☀':theme==='light'?'☾':'◐';
 }
