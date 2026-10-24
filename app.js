@@ -767,10 +767,7 @@ function bindEvents(){
     };
   });document.getElementById('add-learning')?.addEventListener('click',openAdd);document.getElementById('log-activity')?.addEventListener('click',()=>logActivity());document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;render()});document.getElementById('add-goal')?.addEventListener('click',openGoalModal);document.getElementById('add-skill')?.addEventListener('click',openSkillModal);document.getElementById('add-sprint')?.addEventListener('click',openSprintModal);document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openEditGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal));document.querySelectorAll('[data-edit-skill]').forEach(b=>b.onclick=()=>openEditSkill(b.dataset.editSkill));document.querySelectorAll('[data-delete-skill]').forEach(b=>b.onclick=()=>deleteSkill(b.dataset.deleteSkill));document.querySelectorAll('[data-edit-sprint]').forEach(b=>b.onclick=()=>openEditSprint(b.dataset.editSprint));document.querySelectorAll('[data-delete-sprint]').forEach(b=>b.onclick=()=>deleteSprint(b.dataset.deleteSprint));}
 initSupabase();
-
-initSupabase();
-initSupabase();
-initSupabase();document.getElementById('auth-button')?.addEventListener('click',authAction);
+document.getElementById('auth-button')?.addEventListener('click',authAction);
 document.getElementById('theme-toggle')?.addEventListener('click',async()=>{const next=preferences.theme==='system'?'dark':preferences.theme==='dark'?'light':'system';await savePreferences({theme:next});if(user)await trackAudit('theme_changed','settings',user.id,{theme:next});render()});
 document.getElementById('search-trigger')?.addEventListener('click',()=>{const q=prompt('Search courses, goals, skills or activity');if(q){searchTerm=q;setView('board');toast(`Showing results for “${q}”`)}});
 document.getElementById('open-search')?.addEventListener('click',()=>document.getElementById('search-trigger')?.click());
