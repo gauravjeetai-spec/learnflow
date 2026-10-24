@@ -286,6 +286,7 @@ async function refreshSessionState(){
   if(activeView)activeView.textContent=currentView==='board'?'Learning Board':currentView[0].toUpperCase()+currentView.slice(1);
   document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));
   render();
+  startNotificationScheduler();
 }
 function updateAuthButton(){const b=document.getElementById('auth-button');if(b)b.textContent=user?'Log out':'Log in';}
 function updateRoleUI(){
@@ -520,8 +521,251 @@ function sprints(){
   }).join('');
   return '<div class="page"><div class="page-heading"><div><div class="eyebrow">'+(adminView?'Learner & mentor workspace':'Focused timeboxes')+'</div><h1>Sprints</h1><p>'+(adminView?'All sprints across your workspace, including learners and mentors.':'Make a small, clear promise for the week.')+'</p></div><button class="primary-button" id="add-sprint">＋ Start a sprint</button></div>'+(cards||'<div class="empty-state"><strong>No learner or mentor sprints yet</strong><p>Sprints will appear here once they create them.</p></div>')+'</div>';
 }
-function courses(){return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Your learning library</div><h1>Courses & resources</h1><p>Everything you want to learn, in one calm place.</p></div><button class="primary-button" id="add-learning">＋ Add learning</button></div><div class="stats-grid"><div class="stat-card"><span class="stat-label">All resources</span><div class="stat-value">${resources.length}</div><span class="stat-meta">Across 4 goals</span></div><div class="stat-card"><span class="stat-label">Completed</span><div class="stat-value">${resources.filter(r=>r.progress===100).length}</div><span class="stat-meta positive">Keep going</span></div><div class="stat-card"><span class="stat-label">In progress</span><div class="stat-value">${resources.filter(r=>r.column==='in-progress').length}</div><span class="stat-meta">2 due soon</span></div><div class="stat-card"><span class="stat-label">Hours invested</span><div class="stat-value">29<span style="font-size:13px">h</span></div><span class="stat-meta">This quarter</span></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>All resources</strong><button class="filter-button">＋ Filter</button></div><table class="data-table"><thead><tr><th>Resource</th><th>Type</th><th>Status</th><th>Progress</th><th>Owner</th><th>Target date</th></tr></thead><tbody>${resources.map(r=>`<tr data-id="${r.id}"><td><span class="table-title">${esc(r.title)}</span><span class="table-type">${r.provider}</span></td><td>${r.type}</td><td><span class="status-pill ${r.progress===100?'done':r.column==='in-progress'?'progress':''}">${r.status}</span></td><td>${r.progress}%</td><td><span class="avatar avatar-${r.color}">${r.owner}</span></td><td>${r.due}</td></tr>`).join('')}</tbody></table></section></div>`}
-function activity(){return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Your learning history</div><h1>Activity</h1><p>Small actions add up to meaningful outcomes.</p></div><button class="primary-button" id="log-activity">＋ Log activity</button></div><div class="activity-list">${activitiesData.length?activitiesData.map((a,i)=>{const r=resources.find(x=>x.id===a.resource_id);const sprint=sprintsData.find(sp=>sp.id===r?.sprint_id);const d=new Date(a.occurred_at);const goal=r?.goal||'No goal';const skill=(r?.skills||[]).join(', ')||'No skill';return `<div class="activity-day">${i===0?'Recent activity':d.toLocaleDateString()}</div><div class="activity-item"><div class="activity-avatar">↗</div><div class="activity-copy"><strong>${esc(user?.email?.split('@')[0]||'You')}</strong> logged <strong>${a.duration_minutes} minutes</strong> of ${esc(r?.title||'learning')}<small>${esc(a.activity_type)} · Sprint: ${esc(sprint?.title||'None')} · Goal: ${esc(goal)} · Skill: ${esc(skill)}${a.notes?' · '+esc(a.notes):''} · ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</small></div></div>`}).join(''):'<div class="empty-state"><strong>No activity yet</strong><p>Log your first learning session from a resource.</p></div>'}</div></div>`}
+function courses(){
+  const rows=resources.map(r=>'<tr data-id="'+esc(r.id)+'"><td><span class="table-title">'+esc(r.title)+'</span><span class="table-type">'+esc(r.provider)+'</span></td><td>'+esc(r.type)+'</td><td><span class="status-pill '+(r.progress===100?'done':r.column==='in-progress'?'progress':'')+'">'+esc(r.status)+'</span></td><td>'+r.progress+'%</td><td>'+(r.goal?esc(r.goal):'<span class="stat-meta">Not linked</span>')+'</td><td><span class="owner-name">'+esc(r.ownerName||'Learner')+'</span></td><td>'+esc(r.due)+'</td></tr>').join('');
+  return '<div class="page"><div class="page-heading"><div><div class="eyebrow">Your learning library</div><h1>Courses & resources</h1><p>Everything you have added to LearnFlow, with the goal connection visible when one exists.</p></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>All resources</strong><span class="stat-meta">'+resources.length+' resources</span></div><table class="data-table"><thead><tr><th>Resource</th><th>Type</th><th>Status</th><th>Progress</th><th>Goal</th><th>Owner</th><th>Target date</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7">No learning resources yet.</td></tr>')+'</tbody></table></section></div>';
+}
+function analytics(){const total=resources.length,completed=resources.filter(r=>r.progress===100).length,inProgress=resources.filter(r=>r.column==='in-progress').length,progress=total?Math.round(resources.reduce((a,r)=>a+r.progress,0)/total):0;const totalMinutes=activitiesData.reduce((a,x)=>a+Number(x.duration_minutes||0),0);const activeDays=new Set(activitiesData.map(x=>new Date(x.occurred_at).toISOString().slice(0,10))).size;const byGoal=goalsData.map(g=>{const rs=resources.filter(r=>r.goal===g.title);return [g.title,rs.length?Math.round(rs.reduce((a,r)=>a+r.progress,0)/rs.length):0]});return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Make progress visible</div><h1>Analytics</h1><p>Understand how your learning is moving, not just where it is.</p></div></div><div class="metric-grid"><div class="metric-card"><span class="stat-label">Overall progress</span><strong>${progress}%</strong><span class="stat-meta">${total} resources</span></div><div class="metric-card"><span class="stat-label">Completion rate</span><strong>${total?Math.round(completed/total*100):0}%</strong><span class="stat-meta">${completed} of ${total} resources</span></div><div class="metric-card"><span class="stat-label">Learning time</span><strong>${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</strong><span class="stat-meta">Logged activity</span></div><div class="metric-card"><span class="stat-label">Active learning days</span><strong>${activeDays}</strong><span class="stat-meta">Recorded sessions</span></div></div><div class="analytics-grid" style="margin-top:13px"><section class="panel"><div class="panel-header"><h3>Resource status</h3><span class="panel-link">${total} total</span></div><div class="mini-stats" style="justify-content:center;margin:30px 0"><div><strong>${completed}</strong><span>completed</span></div><div><strong>${inProgress}</strong><span>in progress</span></div><div><strong>${total-completed-inProgress}</strong><span>other</span></div></div></section><section class="panel"><div class="panel-header"><h3>Learning time</h3><span class="panel-link">All logged activity</span></div><div class="momentum-score"><strong>${(totalMinutes/60).toFixed(1)}h</strong><small>LOGGED</small></div><p class="momentum-copy">Keep logging sessions to build a useful personal learning history.</p></section></div><section class="panel" style="margin-top:13px"><div class="panel-header"><h3>Progress by goal</h3><span class="panel-link">Live from resources</span></div>${byGoal.map(x=>`<div class="progress-row"><span>${esc(x[0])}</span><b>${x[1]}%</b></div><div class="progress-track" style="margin-bottom:12px"><div class="progress-fill" style="width:${x[1]}%"></div></div>`).join('')||'<div class="empty-state">Create goals and resources to see progress here.</div>'}</section></div>`}
+function animateHighlightNumbers(){
+  const items=document.querySelectorAll('.stat-value,.metric-card > strong,.momentum-score > strong,.attention-item > strong');
+  if(!items.length)return;
+  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  items.forEach(el=>{
+    const targetText=el.textContent.trim();
+    const match=targetText.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+    if(!match)return;
+    const target=Number(match[1]);
+    const suffix=match[2];
+    const decimals=match[1].includes('.')?(match[1].split('.')[1]?.length||1):0;
+    if(reduced){el.textContent=target.toFixed(decimals)+suffix;return}
+    const start=performance.now();
+    const duration=850;
+    const ease=t=>1-Math.pow(1-t,3);
+    const tick=now=>{
+      const progress=Math.min(1,(now-start)/duration);
+      const value=target*ease(progress);
+      el.textContent=(decimals?value.toFixed(decimals):Math.round(value))+suffix;
+      if(progress<1)requestAnimationFrame(tick);
+      else el.textContent=target.toFixed(decimals)+suffix;
+    };
+    el.textContent=(decimals?'0.0':'0')+suffix;
+    requestAnimationFrame(tick);
+  });
+}
+function render(){
+  if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
+  root.innerHTML=views[currentView]?views[currentView]():overview();
+  bindEvents();
+  updateNavCounts();
+  requestAnimationFrame(animateHighlightNumbers);
+}
+async function deleteResource(id){
+  if(!user||!supa){resources=resources.filter(x=>x.id!=id);return true}
+  const {data,error}=await supa.from('resources').delete().eq('id',id).select('id').maybeSingle();
+  if(error){console.error(error);toast('Could not delete resource: '+error.message);return false}
+  if(!data){toast('Resource could not be deleted');return false}
+  resources=resources.filter(x=>x.id!=id);
+  return true;
+}
+function openEditResource(id){
+  const r=resources.find(x=>x.id==id);
+  if(!r)return;
+  const status=r.column||'backlog';
+  const skill=r.skills?.[0]||'';
+  const goalValues=[...new Set([...goalsData.map(g=>g.title),r.goal||''].filter(Boolean))];
+  const skillValues=[...new Set([...skillsData.map(s=>s.title),skill||''].filter(Boolean))];
+  const goalOptions=goalValues.map(g=>`<option value="${esc(g)}" ${r.goal===g?'selected':''}>${esc(g)}</option>`).join('');
+  const skillOptions=skillValues.map(s=>`<option value="${esc(s)}" ${skill===s?'selected':''}>${esc(s)}</option>`).join('');
+  const sprintOptions=sprintsData.map(sp=>`<option value="${esc(sp.id)}" ${r.sprint_id===sp.id?'selected':''}>${esc(sp.title)}</option>`).join('');
+  modal.className='modal';
+  modal.innerHTML=`<div class="detail-head"><div><div class="eyebrow">Edit learning</div><h2 class="detail-title">${esc(r.title)}</h2></div><button class="close-button" id="close-modal">×</button></div><form id="edit-resource-form"><div class="form-grid"><div class="field full"><label>What do you want to learn?</label><input name="title" value="${esc(r.title)}" required></div><div class="field"><label>Type</label><select name="type">${['Course','Book','Video','Article','Project','Workshop','Podcast','Other'].map(v=>`<option ${r.type===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Status</label><select name="status">${[['backlog','Backlog'],['planned','Planned'],['in-progress','In Progress'],['practice','Practice / Review'],['completed','Completed']].map(([v,l])=>`<option value="${v}" ${status===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>Progress</label><input name="progress" type="number" min="0" max="100" value="${Number(r.progress)||0}"></div><div class="field"><label>Priority</label><select name="priority">${['Medium','High','Low'].map(v=>`<option ${r.priority===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Goal</label><select name="goal" id="edit-goal-select">${goalOptions}<option value="__create_goal__">＋ Create new goal</option></select></div><div class="field"><label>Skill</label><select name="skill" id="edit-skill-select">${skillOptions}<option value="__create_skill__">＋ Create new skill</option></select></div><div class="field"><label>Sprint</label><select name="sprint_id"><option value="">No sprint</option>${sprintOptions}</select></div><div class="field"><label>Provider</label><input name="provider" value="${esc(r.provider||'')}"></div><div class="field"><label>Target date</label><input name="due" type="date" value="${r.due_date||''}"></div><div class="field"><label>Estimated hours</label><input name="estimated_hours" type="number" min="0" step="0.25" value="${r.estimated_hours??''}"></div><div class="field full"><label>Notes</label><textarea name="notes" placeholder="Optional notes">${esc(r.notes||'')}</textarea></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Save changes</button></div></form>`;
+  modalBackdrop.classList.add('open');
+  document.getElementById('close-modal').onclick=closeModal;
+  modal.querySelectorAll('[data-detail-tab]').forEach(tab=>tab.onclick=()=>{
+    modal.querySelectorAll('[data-detail-tab]').forEach(x=>x.classList.toggle('active',x===tab));
+    const content=document.getElementById('detail-tab-content');
+    if(!content)return;
+    content.innerHTML=tab.dataset.detailTab==='activity'?activityRows():tab.dataset.detailTab==='notes'?notesView():historyView();
+  });
+  document.getElementById('cancel-modal').onclick=closeModal;
+  document.getElementById('edit-goal-select').onchange=()=>{if(document.getElementById('edit-goal-select').value==='__create_goal__'){openGoalModal(created=>{r.goal=created.title;openEditResource(id)})}};
+  document.getElementById('edit-skill-select').onchange=()=>{if(document.getElementById('edit-skill-select').value==='__create_skill__'){openSkillModal(created=>{r.skills=[created.title];openEditResource(id)})}};
+  document.getElementById('edit-resource-form').onsubmit=async e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const progress=Math.max(0,Math.min(100,Number(f.get('progress'))||0));
+    r.title=f.get('title');
+    r.type=f.get('type');
+    r.provider=f.get('provider')||'Independent';
+    r.goal=f.get('goal')||'';
+    r.skills=[f.get('skill')||'General'];
+    r.sprint_id=f.get('sprint_id')||null;
+    r.priority=f.get('priority');
+    r.column=f.get('status');
+    r.progress=progress;
+    r.status=r.column==='completed'?'Completed':r.column==='in-progress'?'In Progress':r.column==='practice'?'Practice / Review':r.column==='planned'?'Planned':'Backlog';
+    r.due=f.get('due')||'Not scheduled';
+    r.due_date=f.get('due')||null;
+    r.estimated_hours=f.get('estimated_hours')?Number(f.get('estimated_hours')):null;
+    r.notes=f.get('notes')||null;
+    if(await persistResource(r)){closeModal();toast('Learning resource updated');render()}
+  };
+}
+function openResource(id){
+  const r=resources.find(x=>x.id==id);
+  if(!r)return;
+  const resourceActivities=activitiesData.filter(a=>String(a.resource_id)===String(r.id)).sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
+  const activityRows=()=>resourceActivities.length?resourceActivities.map(a=>{const d=new Date(a.occurred_at);return `<div class="detail-activity-item"><div><strong>${esc(a.activity_type)}</strong><span style="display:block;color:var(--muted);font-size:10px;margin-top:3px">${d.toLocaleDateString()} · ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span></div><span>${Number(a.duration_minutes||0)} min</span></div>`}).join(''):'<div class="empty-state" style="padding:24px">No activity yet. Log a learning session to see it here.</div>';
+  const notesView=()=>r.notes?`<div class="detail-notes" style="padding:10px 0;font-size:11px;line-height:1.6;white-space:pre-wrap">${esc(r.notes)}</div>`:'<div class="empty-state" style="padding:24px">No notes yet. Add notes from Edit resource.</div>';
+  const historyView=()=>`<div class="detail-history" style="padding:10px 0"><div class="detail-activity-item"><strong>Resource created</strong><span>${r.created_at?new Date(r.created_at).toLocaleString():'—'}</span></div><div class="detail-activity-item"><strong>Last updated</strong><span>${r.updated_at?new Date(r.updated_at).toLocaleString():'—'}</span></div>${resourceActivities.map(a=>{const d=new Date(a.occurred_at);return `<div class="detail-activity-item"><strong>${esc(a.activity_type)} · ${Number(a.duration_minutes||0)} min</strong><span>${d.toLocaleString()}</span></div>`}).join('')||''}</div>`;
+  modal.innerHTML=`<div class="detail-head"><div><div class="detail-type">${esc(r.type)} · ${esc(r.provider)}</div><h2 class="detail-title">${esc(r.title)}</h2><div class="detail-provider">${esc(r.goal||'')}</div></div><button class="close-button" id="close-modal">×</button></div><div class="detail-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div><div style="display:flex;gap:7px;margin-top:13px"><button class="filter-button" data-progress="${r.id}">+5%</button><button class="filter-button" data-progress="${r.id}">+10%</button><button class="primary-button" style="padding:7px 10px;margin-left:auto" data-complete="${r.id}">Mark complete</button></div></div><div class="detail-meta"><div><span>Status</span><strong>${r.status}</strong></div><div><span>Sprint</span><strong>${esc(sprintsData.find(sp=>sp.id===r.sprint_id)?.title||'None')}</strong></div><div><span>Estimated</span><strong>${r.estimated_hours??'—'} hours</strong></div><div><span>Target date</span><strong>${r.due}</strong></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="detail-tabs"><button class="active" data-detail-tab="activity">Activity</button><button data-detail-tab="notes">Notes</button><button data-detail-tab="history">History</button></div><div class="detail-activity" id="detail-tab-content">${activityRows()}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="secondary-button" id="edit-detail" style="flex:1">Edit resource</button><button class="secondary-button" id="log-detail" style="flex:1">＋ Log learning activity</button></div><button class="secondary-button" id="delete-detail" style="width:100%;margin-top:8px;border-color:#e6b4b4;color:#b34a4a">Delete resource</button>`;
+  modal.className='modal detail-modal';
+  modalBackdrop.classList.add('open');
+  document.getElementById('close-modal').onclick=closeModal;
+  modal.querySelectorAll('[data-detail-tab]').forEach(tab=>tab.onclick=()=>{modal.querySelectorAll('[data-detail-tab]').forEach(x=>x.classList.toggle('active',x===tab));const content=document.getElementById('detail-tab-content');if(content)content.innerHTML=tab.dataset.detailTab==='activity'?activityRows():tab.dataset.detailTab==='notes'?notesView():historyView()});
+  document.getElementById('edit-detail').onclick=()=>openEditResource(r.id);
+  document.getElementById('log-detail').onclick=()=>logActivity(r.id);
+  document.getElementById('delete-detail').onclick=async()=>{
+    if(!confirm(`Delete "${r.title}"? This cannot be undone.`))return;
+    if(await deleteResource(r.id)){closeModal();toast('Learning resource deleted');render()}
+  };
+  modal.querySelectorAll('[data-progress]').forEach(b=>b.onclick=async()=>{
+    const amount=Number(b.textContent.replace('+','').replace('%',''));
+    r.progress=Math.min(100,r.progress+amount);
+    if(r.progress===100){r.column='completed';r.status='Completed'}
+    if(await persistResource(r)){toast('Progress updated');openResource(r.id);render()}
+  });
+  document.querySelector('[data-complete]').onclick=async()=>{
+    r.progress=100;r.column='completed';r.status='Completed';
+    if(await persistResource(r)){toast('Resource completed');closeModal();render()}
+  };
+}
+function closeModal(){modalBackdrop.classList.remove('open')}
+function openAdd(){const sprintOptions=sprintsData.map(sp=>`<option value="${esc(sp.id)}">${esc(sp.title)}</option>`).join('');modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal" style="float:right">×</button><h2>Add learning</h2><p class="modal-subtitle">Capture the next thing you want to learn. You can fill in the details later.</p><form id="resource-form"><div class="form-grid"><div class="field full"><label>What do you want to learn?</label><input name="title" placeholder="e.g. Financial Modeling for Entrepreneurs" required autofocus></div><div class="field"><label>Type</label><select name="type"><option>Course</option><option>Book</option><option>Video</option><option>Article</option><option>Project</option><option>Workshop</option></select></div><div class="field"><label>Priority</label><select name="priority"><option>Medium</option><option>High</option><option>Low</option></select></div><div class="field"><label>Goal</label><select name="goal"><option>Build Business Acumen</option><option>Become Better at AI</option><option>Improve Leadership</option><option>Master Marketing</option></select></div><div class="field"><label>Skill</label><input name="skill" placeholder="e.g. Product Strategy"></div><div class="field"><label>Sprint</label><select name="sprint_id"><option value="">No sprint</option>${sprintOptions}</select></div><div class="field"><label>Provider</label><input name="provider" placeholder="e.g. Coursera"></div><div class="field"><label>Target date</label><input name="due" type="date"></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Add learning</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('resource-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const r={title:f.get('title'),type:f.get('type'),provider:f.get('provider')||'Independent',goal:f.get('goal'),skills:[f.get('skill')||'General'],sprint_id:f.get('sprint_id')||null,status:'Backlog',progress:0,priority:f.get('priority'),due:f.get('due')||'Not scheduled',hours:'0 / —',column:'backlog',owner:'J',color:'blue',activity:[]};if(await persistResource(r)){resources.unshift(r);closeModal();toast(user?'Learning resource synced':'Learning resource added');render()}}}
+function openGoalModal(onCreated){modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal">×</button><h2>Create goal</h2><p class="modal-subtitle">Give your learning a reason to exist.</p><form id="goal-form"><div class="field"><label>Goal name</label><input name="title" required></div><div class="field"><label>Priority</label><select name="priority"><option>Medium</option><option>High</option><option>Low</option></select></div><div class="field"><label>Description</label><textarea name="description"></textarea></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Create goal</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('goal-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const created=await createGoal({title:f.get('title'),description:f.get('description')||null,priority:f.get('priority')});if(created){closeModal();onCreated?.(created)}}}
+function openSkillModal(onCreated){modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal">×</button><h2>Add skill</h2><form id="skill-form"><div class="field"><label>Skill name</label><input name="title" required></div><div class="field"><label>Description</label><textarea name="description"></textarea></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Add skill</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('skill-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const created=await createSkill({title:f.get('title'),description:f.get('description')||null});if(created){closeModal();onCreated?.(created)}}}
+function openSprintModal(){modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal">×</button><h2>Start a sprint</h2><form id="sprint-form"><div class="field"><label>Sprint name</label><input name="title" required></div><div class="field"><label>Start date</label><input name="start_date" type="date" required></div><div class="field"><label>End date</label><input name="end_date" type="date" required></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Start sprint</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('sprint-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);if(await createSprint({title:f.get('title'),start_date:f.get('start_date'),end_date:f.get('end_date'),status:'active'}))closeModal()}}
+function logActivity(id){const initialId=id??resources[0]?.id;if(!resources.length){toast('Add a learning resource first');return}const resourceOptions=resources.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(initialId)?'selected':''}>${esc(x.title)}</option>`).join('');modal.className='modal';modal.innerHTML=`<button class="close-button" id="close-modal" style="float:right">×</button><h2>Log learning activity</h2><p class="modal-subtitle">Make the work visible. It only takes a few seconds.</p><form id="activity-form"><div class="form-grid"><div class="field full"><label>Resource</label><select name="resource_id" id="activity-resource">${resourceOptions}</select></div><div class="field"><label>Goal</label><input id="activity-goal" value="" disabled></div><div class="field"><label>Skill</label><input id="activity-skill" value="" disabled></div><div class="field full"><label>Sprint</label><input id="activity-sprint" value="" disabled></div><div class="field"><label>Activity type</label><select name="activity_type"><option>Study</option><option>Watch</option><option>Read</option><option>Practice</option><option>Project</option><option>Revision</option></select></div><div class="field"><label>Duration (minutes)</label><input name="duration" type="number" min="1" required></div><div class="field full"><label>Notes</label><textarea name="notes"></textarea></div></div><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-modal">Cancel</button><button class="primary-button">Save activity</button></div></form>`;modalBackdrop.classList.add('open');document.getElementById('close-modal').onclick=closeModal;document.getElementById('cancel-modal').onclick=closeModal;const resourceSelect=document.getElementById('activity-resource');const goalInput=document.getElementById('activity-goal');const skillInput=document.getElementById('activity-skill');const sprintInput=document.getElementById('activity-sprint');const syncContext=()=>{const selected=resources.find(x=>String(x.id)===String(resourceSelect.value));const sprint=sprintsData.find(sp=>sp.id===selected?.sprint_id);goalInput.value=selected?.goal||'Not assigned';skillInput.value=(selected?.skills||[]).join(', ')||'Not assigned';sprintInput.value=sprint?.title||'No sprint assigned'};resourceSelect.onchange=syncContext;syncContext();document.getElementById('activity-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const selected=resources.find(x=>String(x.id)===String(f.get('resource_id')));if(!selected){toast('Please select a learning resource');return}const minutes=Math.max(1,Number(f.get('duration'))||0);const {data,error}=await supa.from('activities').insert({resource_id:selected.id,activity_type:f.get('activity_type'),duration_minutes:minutes,notes:f.get('notes')||null}).select().single();if(error){toast('Could not log activity: '+error.message);return}activitiesData.unshift(data);syncResourceActivities();selected.progress=Math.min(100,selected.progress+5);if(selected.progress===100){selected.column='completed';selected.status='Completed'}if(await persistResource(selected)){closeModal();toast('Activity logged · progress +5%');render()}}}
+
+function attachAuditClickTracker(){
+  if(auditClickTrackerAttached)return;
+  auditClickTrackerAttached=true;
+  document.addEventListener('click',e=>{
+    const target=e.target.closest('button,a,.nav-item,.course-card,.data-table tr,[data-view-link]');
+    if(!target)return;
+    const label=(target.dataset.view||target.dataset.viewLink||target.getAttribute('aria-label')||target.textContent||'').trim().replace(/\s+/g,' ').slice(0,120);
+    if(label)trackAudit('click',target.dataset.view?'navigation':'ui',target.dataset.id||target.dataset.view||null,{label});
+  });
+}
+function bindEvents(){
+  attachAuditClickTracker();
+  document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
+  document.getElementById('settings-signout')?.addEventListener('click',()=>authAction());
+  document.getElementById('settings-delete-request')?.addEventListener('click',requestAccountDeletion);
+  document.getElementById('settings-profile-form')?.addEventListener('submit',async e=>{e.preventDefault();const name=String(new FormData(e.target).get('display_name')||'').trim();if(!name)return;const {data,error}=await supa.from('profiles').update({display_name:name}).eq('user_id',user.id).select('*').single();if(error){toast('Could not save profile: '+error.message);return}profile=data;const {error:authError}=await supa.auth.updateUser({data:{full_name:name}});if(authError)toast('Profile saved, but authentication name sync failed');else toast('Profile saved');await trackAudit('profile_updated','profile',user.id,{display_name:name});updateRoleUI();render()});
+  document.getElementById('learning-preferences-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);const ok=await savePreferences({weekly_learning_minutes:Number(f.get('weekly_learning_minutes')),daily_learning_minutes:Number(f.get('daily_learning_minutes')),session_length_minutes:Number(f.get('session_length_minutes')),default_priority:String(f.get('default_priority'))});if(ok){await trackAudit('preferences_updated','settings',user.id,{section:'learning'});toast('Learning preferences saved');render()}});
+  document.getElementById('notification-preferences-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);const patch={learning_reminders_enabled:f.has('learning_reminders_enabled'),sprint_deadline_reminders_enabled:f.has('sprint_deadline_reminders_enabled'),overdue_reminders_enabled:f.has('overdue_reminders_enabled'),weekly_summary_enabled:f.has('weekly_summary_enabled'),mentor_feedback_enabled:f.has('mentor_feedback_enabled'),notification_frequency:String(f.get('notification_frequency')),notification_time:String(f.get('notification_time')||'09:00'),browser_notifications_enabled:f.has('browser_notifications_enabled')&&('Notification' in window)&&Notification.permission==='granted'};const ok=await savePreferences(patch);if(ok){await trackAudit('preferences_updated','settings',user.id,{section:'notifications'});toast('Notification settings saved');render()}});
+  document.getElementById('request-notification-permission')?.addEventListener('click',async()=>{if(!('Notification' in window)){toast('This browser does not support notifications');return}const permission=await Notification.requestPermission();if(permission==='granted'){await savePreferences({browser_notifications_enabled:true});toast('Browser notifications enabled');render()}else toast('Browser notification permission was not granted')});
+  document.getElementById('appearance-preferences-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);const ok=await savePreferences({theme:String(f.get('theme')),reduce_motion:f.has('reduce_motion')});if(ok){document.documentElement.classList.toggle('reduce-motion',preferences.reduce_motion);await trackAudit('preferences_updated','settings',user.id,{section:'appearance'});toast('Appearance settings saved');render()}});
+
+  document.getElementById('name-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!user||!supa)return;
+    const f=new FormData(e.target);
+    const display_name=String(f.get('display_name')||'').trim();
+    if(!display_name){toast('Please enter your name');return}
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Saving…'}
+    const {data,error}=await supa.from('profiles').update({display_name,name_setup_completed:true}).eq('user_id',user.id).select('*').single();
+    if(error){if(button){button.disabled=false;button.textContent='Continue'}console.error(error);toast('Could not save your name: '+error.message);return}
+    const {error:authError}=await supa.auth.updateUser({data:{full_name:display_name}});
+    if(authError){console.error(authError);if(button){button.disabled=false;button.textContent='Continue'}toast('Your LearnFlow name was saved, but we could not sync the authentication profile. Please try again.');return}
+    if(button){button.disabled=false;button.textContent='Continue'}
+    profile=data;
+    currentView='overview';
+    updateRoleUI();
+    render();
+    toast('Welcome to LearnFlow, '+display_name+'!');
+  });
+  document.getElementById('login-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const email=String(f.get('email')||'').trim();
+    const password=String(f.get('password')||'');
+    if(!email)return;
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Logging in…'}
+    const result=password
+      ?await supa.auth.signInWithPassword({email,password})
+      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    if(button){button.disabled=false;button.textContent='Log in'}
+    if(result.error){toast(result.error.message);return}
+    if(password){
+      user=result.data?.user||user;
+      await refreshSessionState();
+      toast('Signed in successfully.');
+    }else{
+      toast('Check your email for the LearnFlow login link.');
+    }
+  });
+  document.getElementById('magic-link-login')?.addEventListener('click',async()=>{
+    const email=String(document.querySelector('#login-form input[name="email"]')?.value||'').trim();
+    if(!email){toast('Enter your email first');document.querySelector('#login-form input[name="email"]')?.focus();return}
+    const button=document.getElementById('magic-link-login');
+    button.disabled=true;button.textContent='Sending…';
+    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    button.disabled=false;button.textContent='Send me a magic link';
+    toast(error?error.message:'Check your email for the LearnFlow login link.');
+  });
+  document.getElementById('back-to-demo')?.addEventListener('click',()=>{
+    currentView='overview';
+    document.getElementById('breadcrumb-current').textContent='Overview';
+    render();
+  });
+  document.querySelectorAll('[data-approve-user]').forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.approveUser;
+    const role=document.querySelector(`[data-role-user="${id}"]`)?.value||'learner';
+    const status=document.querySelector(`[data-access-user="${id}"]`)?.value||'active';
+    await updateAccess(id,role,status);
+  });
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
+  document.querySelectorAll('.course-card[draggable="true"]').forEach(card=>{
+    card.ondragstart=e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.id);card.classList.add('dragging')};
+    card.ondragend=()=>card.classList.remove('dragging');
+  });
+  document.querySelectorAll('.board-column').forEach(column=>{
+    column.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move';column.classList.add('drag-over')};
+    column.ondragleave=e=>{if(!column.contains(e.relatedTarget))column.classList.remove('drag-over')};
+    column.ondrop=async e=>{
+      e.preventDefault();column.classList.remove('drag-over');
+      const id=e.dataTransfer.getData('text/plain');const card=resources.find(r=>String(r.id)===String(id));const target=column.dataset.status;
+      if(!card||!target||card.column===target)return;
+      const previous={column:card.column,status:card.status,progress:card.progress};
+      card.column=target;card.status=target==='in-progress'?'In Progress':target==='completed'?'Completed':target==='practice'?'Practice / Review':target==='planned'?'Planned':'Backlog';
+      if(target==='completed')card.progress=100;
+      render();
+      if(await persistResource(card))toast('Moved to '+card.status);else{Object.assign(card,previous);render();toast('Could not move resource')};
+    };
+  });document.getElementById('add-learning')?.addEventListener('click',openAdd);document.getElementById('log-activity')?.addEventListener('click',()=>logActivity());document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;render()});document.getElementById('add-goal')?.addEventListener('click',openGoalModal);document.getElementById('add-skill')?.addEventListener('click',openSkillModal);document.getElementById('add-sprint')?.addEventListener('click',openSprintModal);document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openEditGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal));document.querySelectorAll('[data-edit-skill]').forEach(b=>b.onclick=()=>openEditSkill(b.dataset.editSkill));document.querySelectorAll('[data-delete-skill]').forEach(b=>b.onclick=()=>deleteSkill(b.dataset.deleteSkill));document.querySelectorAll('[data-edit-sprint]').forEach(b=>b.onclick=()=>openEditSprint(b.dataset.editSprint));document.querySelectorAll('[data-delete-sprint]').forEach(b=>b.onclick=()=>deleteSprint(b.dataset.deleteSprint));}
+document.getElementById('auth-button')?.addEventListener('click',authAction);
+document.getElementById('theme-toggle').onclick=async()=>{const next=preferences.theme==='system'?'dark':preferences.theme==='dark'?'light':'system';await savePreferences({theme:next});await trackAudit('theme_changed','settings',user.id,{theme:next});render()};document.getElementById('search-trigger').onclick=()=>{const q=prompt('Search courses, goals, skills or activity');if(q){searchTerm=q;setView('board');toast(`Showing results for “${q}”`)}};document.getElementById('open-search')?.addEventListener('click',()=>document.getElementById('search-trigger').click());modalBackdrop.onclick=e=>{if(e.target===modalBackdrop)closeModal()};initSupabase();function auditDescription(a){
+  const m=a.metadata||{};
+  if(a.action==='click')return 'Clicked '+(m.label||a.target_type||'interface');
+  if(a.action==='login')return 'Signed in';
+  if(a.action==='logout')return 'Signed out';
+  if(a.action==='notification_sent')return 'Notification sent: '+(m.title||'LearnFlow reminder');
+  if(a.action==='resource_moved')return 'Moved resource '+(m.title||a.target_id||'');
+  const labels={goal_updated:'Updated goal',goal_deleted:'Deleted goal',skill_updated:'Updated skill',skill_deleted:'Deleted skill',sprint_updated:'Updated sprint',sprint_deleted:'Deleted sprint',learning_activity_logged:'Logged learning activity',preferences_updated:'Updated settings',profile_updated:'Updated profile',theme_changed:'Changed theme'};
+  return labels[a.action]||a.action.replaceAll('_',' ');
+}
+function activity(){
+  const learning=activitiesData.map(a=>({type:'learning',occurred_at:a.occurred_at,description:'Logged '+a.duration_minutes+' minutes of '+(resources.find(r=>String(r.id)===String(a.resource_id))?.title||'learning'),detail:a.activity_type}));
+  const audit=auditEvents.map(a=>({type:'audit',occurred_at:a.occurred_at,description:auditDescription(a),detail:a.target_type||'account'}));
+  const all=[...learning,...audit].sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
+  const rows=all.map(x=>'<div class="activity-item"><div class="activity-avatar">'+(x.type==='audit'?'•':'↗')+'</div><div class="activity-copy"><strong>'+esc(x.description)+'</strong><small>'+esc(x.detail||'')+' · '+new Date(x.occurred_at).toLocaleString()+'</small></div></div>').join('');
+  return '<div class="page"><div class="page-heading"><div><div class="eyebrow">Immutable activity history</div><h1>Activity</h1><p>LearnFlow records learning sessions and meaningful user actions with their exact time. This history cannot be edited from the app.</p></div><button class="primary-button" id="log-activity">＋ Log learning activity</button></div><section class="panel list-panel"><div class="table-toolbar"><strong>Activity log</strong><span class="stat-meta">'+all.length+' recorded events</span></div><div class="activity-list">'+(rows||'<div class="empty-state"><strong>No activity yet</strong><p>Your learning and workspace actions will appear here.</p></div>')+'</div></section></div>';
+}
 function analytics(){const total=resources.length,completed=resources.filter(r=>r.progress===100).length,inProgress=resources.filter(r=>r.column==='in-progress').length,progress=total?Math.round(resources.reduce((a,r)=>a+r.progress,0)/total):0;const totalMinutes=activitiesData.reduce((a,x)=>a+Number(x.duration_minutes||0),0);const activeDays=new Set(activitiesData.map(x=>new Date(x.occurred_at).toISOString().slice(0,10))).size;const byGoal=goalsData.map(g=>{const rs=resources.filter(r=>r.goal===g.title);return [g.title,rs.length?Math.round(rs.reduce((a,r)=>a+r.progress,0)/rs.length):0]});return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Make progress visible</div><h1>Analytics</h1><p>Understand how your learning is moving, not just where it is.</p></div></div><div class="metric-grid"><div class="metric-card"><span class="stat-label">Overall progress</span><strong>${progress}%</strong><span class="stat-meta">${total} resources</span></div><div class="metric-card"><span class="stat-label">Completion rate</span><strong>${total?Math.round(completed/total*100):0}%</strong><span class="stat-meta">${completed} of ${total} resources</span></div><div class="metric-card"><span class="stat-label">Learning time</span><strong>${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</strong><span class="stat-meta">Logged activity</span></div><div class="metric-card"><span class="stat-label">Active learning days</span><strong>${activeDays}</strong><span class="stat-meta">Recorded sessions</span></div></div><div class="analytics-grid" style="margin-top:13px"><section class="panel"><div class="panel-header"><h3>Resource status</h3><span class="panel-link">${total} total</span></div><div class="mini-stats" style="justify-content:center;margin:30px 0"><div><strong>${completed}</strong><span>completed</span></div><div><strong>${inProgress}</strong><span>in progress</span></div><div><strong>${total-completed-inProgress}</strong><span>other</span></div></div></section><section class="panel"><div class="panel-header"><h3>Learning time</h3><span class="panel-link">All logged activity</span></div><div class="momentum-score"><strong>${(totalMinutes/60).toFixed(1)}h</strong><small>LOGGED</small></div><p class="momentum-copy">Keep logging sessions to build a useful personal learning history.</p></section></div><section class="panel" style="margin-top:13px"><div class="panel-header"><h3>Progress by goal</h3><span class="panel-link">Live from resources</span></div>${byGoal.map(x=>`<div class="progress-row"><span>${esc(x[0])}</span><b>${x[1]}%</b></div><div class="progress-track" style="margin-bottom:12px"><div class="progress-fill" style="width:${x[1]}%"></div></div>`).join('')||'<div class="empty-state">Create goals and resources to see progress here.</div>'}</section></div>`}
 function animateHighlightNumbers(){
   const items=document.querySelectorAll('.stat-value,.metric-card > strong,.momentum-score > strong,.attention-item > strong');
