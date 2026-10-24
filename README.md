@@ -334,3 +334,9 @@ Added a Learner Settings page covering profile, learning preferences, notificati
 - Learners, Mentors, and Admins can edit/delete workspace Goals, Skills, and Sprints they are allowed to manage. Admins retain cross-user management; normal users remain protected by Supabase RLS.
 - Courses & resources is a read-only library view with Goal linkage shown where present. Resources do not have to be linked to a Goal.
 - Activity is append-only from the application: learning sessions plus meaningful UI/user actions (navigation/clicks, moves, settings changes, CRUD actions, sign-in/sign-out, and notifications) are timestamped in Supabase audit_events. Users cannot update or delete audit events through the client.
+
+## Runtime reliability
+- LearnFlow startup is guarded so the Supabase initialization path runs exactly once.
+- The main view renderer has a recovery fallback instead of allowing a renderer error to leave the workspace blank.
+- Production JS/CSS/HTML assets use no-store caching, with versioned app/style references to prevent stale browser assets from masking current fixes.
+- A lightweight boot watchdog shows a refresh action if the application bundle fails to populate the main view.
