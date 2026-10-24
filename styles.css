@@ -36,3 +36,11 @@
 .course-card[draggable="true"]{cursor:grab}.course-card.dragging{opacity:.45;transform:scale(.98)}.board-column.drag-over{background:var(--accent-soft);border-radius:10px;outline:2px dashed var(--accent);outline-offset:4px}
 
 .settings-panel{margin-bottom:13px}.settings-panel .panel-header{margin-bottom:12px}.settings-grid{display:grid;gap:1px}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid var(--border)}.setting-row:last-child{border-bottom:0}.setting-row strong{display:block}.setting-row small{display:block;color:var(--muted);margin-top:3px}.setting-row select,.settings-list select{min-width:150px}.settings-list{display:grid;gap:12px}.settings-list label{display:flex;align-items:center;justify-content:space-between;gap:16px}.settings-note,.settings-copy{color:var(--muted);font-size:12px;line-height:1.6;margin:12px 0 0}.settings-actions{display:flex;gap:8px;flex-wrap:wrap}.danger-panel{border-color:#ead0d0}.danger-button{border:1px solid #d9a6a6;background:#fff;color:#a33;padding:8px 12px;border-radius:8px;cursor:pointer}
+
+/* User accessibility preference */
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
