@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261024-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,6 +45,14 @@
     <div class="mobile-nav"><button class="active" data-view="overview"><span>⌂</span>Home</button><button data-view="board"><span>▦</span>Board</button><button data-view="goals"><span>◎</span>Goals</button><button data-view="activity"><span>↗</span>Activity</button></div>
     <div class="modal-backdrop" id="modal-backdrop"><div class="modal" id="modal"></div></div>
     <div class="toast" id="toast"></div>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=20261024-1"></script>
+    <script>
+      setTimeout(function(){
+        var root=document.getElementById("view-container");
+        if(root && !root.children.length){
+          root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is still loading</strong><p>The application script did not finish loading. Refresh to retry.</p><button class="primary-button" onclick="window.location.reload()">Refresh LearnFlow</button></div></div>';
+        }
+      },4000);
+    </script>
   </body>
 </html>
