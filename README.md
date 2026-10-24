@@ -324,3 +324,13 @@ Resource detail Activity and History views now derive entries directly from the 
 ### Learner Settings and account deletion requests — implemented
 
 Added a Learner Settings page covering profile, learning preferences, notifications, privacy/visibility, appearance/accessibility, and account controls. Preferred name updates remain synchronized with the authentication profile. Account deletion is request-only: learners receive an immediate confirmation toast and the request is stored in Supabase for Admin review; no account is deleted automatically. Admin User Access now includes pending deletion requests.
+
+
+### Learner Settings, notifications, workspace CRUD, and immutable activity log — implemented
+
+- Learner Settings now persists weekly targets up to 30 hours, daily targets up to 180 minutes, preferred session length up to 180 minutes, and default priority.
+- Notification preferences are editable per learner, including reminder categories, frequency, preferred time, and browser notification permission. The current implementation checks scheduled reminders while LearnFlow is open; background push while the browser is closed requires a dedicated push service.
+- Theme selection now persists System/Light/Dark and respects the device's system theme; Reduce Motion is persisted and applied.
+- Learners, Mentors, and Admins can edit/delete workspace Goals, Skills, and Sprints they are allowed to manage. Admins retain cross-user management; normal users remain protected by Supabase RLS.
+- Courses & resources is a read-only library view with Goal linkage shown where present. Resources do not have to be linked to a Goal.
+- Activity is append-only from the application: learning sessions plus meaningful UI/user actions (navigation/clicks, moves, settings changes, CRUD actions, sign-in/sign-out, and notifications) are timestamped in Supabase audit_events. Users cannot update or delete audit events through the client.
