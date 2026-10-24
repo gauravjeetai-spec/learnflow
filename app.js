@@ -766,7 +766,7 @@ function bindEvents(){
       if(await persistResource(card))toast('Moved to '+card.status);else{Object.assign(card,previous);render();toast('Could not move resource')};
     };
   });document.getElementById('add-learning')?.addEventListener('click',openAdd);document.getElementById('log-activity')?.addEventListener('click',()=>logActivity());document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;render()});document.getElementById('add-goal')?.addEventListener('click',openGoalModal);document.getElementById('add-skill')?.addEventListener('click',openSkillModal);document.getElementById('add-sprint')?.addEventListener('click',openSprintModal);document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openEditGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal));document.querySelectorAll('[data-edit-skill]').forEach(b=>b.onclick=()=>openEditSkill(b.dataset.editSkill));document.querySelectorAll('[data-delete-skill]').forEach(b=>b.onclick=()=>deleteSkill(b.dataset.deleteSkill));document.querySelectorAll('[data-edit-sprint]').forEach(b=>b.onclick=()=>openEditSprint(b.dataset.editSprint));document.querySelectorAll('[data-delete-sprint]').forEach(b=>b.onclick=()=>deleteSprint(b.dataset.deleteSprint));}
-initSupabase();
+if(!window.__LEARNFLOW_APP_STARTED__){window.__LEARNFLOW_APP_STARTED__=true;initSupabase();}
 document.getElementById('auth-button')?.addEventListener('click',authAction);
 document.getElementById('theme-toggle')?.addEventListener('click',async()=>{const next=preferences.theme==='system'?'dark':preferences.theme==='dark'?'light':'system';await savePreferences({theme:next});if(user)await trackAudit('theme_changed','settings',user.id,{theme:next});render()});
 document.getElementById('search-trigger')?.addEventListener('click',()=>{const q=prompt('Search courses, goals, skills or activity');if(q){searchTerm=q;setView('board');toast(`Showing results for “${q}”`)}});
@@ -816,12 +816,30 @@ function animateHighlightNumbers(){
   });
 }
 function render(){
-  if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){root.innerHTML=accessGate();bindEvents();return}
+  if(!root)return;
   const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
-  root.innerHTML=views[currentView]?views[currentView]():overview();
-  bindEvents();
-  updateNavCounts();
-  requestAnimationFrame(animateHighlightNumbers);
+  try{
+    if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){
+      root.innerHTML=accessGate();
+    }else{
+      const viewRenderer=views[currentView]||overview;
+      root.innerHTML=viewRenderer();
+    }
+  }catch(error){
+    console.error('LearnFlow view render failed:',error);
+    currentView='overview';
+    try{
+      root.innerHTML=overview();
+    }catch(fallbackError){
+      console.error('LearnFlow overview fallback failed:',fallbackError);
+      root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Your workspace is safe. Refresh LearnFlow to retry the interface.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+    }
+  }
+  try{bindEvents()}catch(error){console.error('LearnFlow event binding failed:',error)}
+  try{updateNavCounts()}catch(error){console.error('LearnFlow navigation count update failed:',error)}
+  requestAnimationFrame(()=>{try{animateHighlightNumbers()}catch(error){console.error('LearnFlow number animation failed:',error)}});
+  const recover=document.getElementById('recover-app');
+  if(recover)recover.onclick=()=>window.location.reload();
 }
 async function deleteResource(id){
   if(!user||!supa){resources=resources.filter(x=>x.id!=id);return true}
