@@ -54,6 +54,15 @@ let user=null;
 let profile=null;
 let profiles=[];
 let deletionRequests=[];
+let auditEvents=[];
+let preferences={
+  weekly_learning_minutes:420,daily_learning_minutes:45,session_length_minutes:45,default_priority:'Medium',
+  learning_reminders_enabled:true,sprint_deadline_reminders_enabled:true,overdue_reminders_enabled:true,
+  weekly_summary_enabled:true,mentor_feedback_enabled:true,notification_frequency:'daily',notification_time:'09:00',
+  theme:'system',reduce_motion:false,browser_notifications_enabled:false,last_notification_at:null
+};
+let auditClickTrackerAttached=false;
+let notificationTimer=null;
 let resources=demoResources.map(r=>({...r,skills:[...r.skills],activity:r.activity.map(a=>[...a])}));
 let goalsData=[], skillsData=[], sprintsData=[], activitiesData=[];
 let currentView='overview'; let searchTerm=''; let activeFilter='All';
@@ -89,6 +98,96 @@ async function updateAccess(userId, role, accessStatus){
   return true;
 }
 async function loadDeletionRequests(){if(!supa||profile?.role!=='admin'||profile?.access_status!=='active'){deletionRequests=[];return}const {data,error}=await supa.from('account_deletion_requests').select('*').order('requested_at',{ascending:false});if(error){console.error(error);deletionRequests=[];return}deletionRequests=data||[]}
+async function loadPreferences(){
+  if(!user||!supa){preferences={...preferences};applyTheme();return}
+  const {data,error}=await supa.from('user_preferences').select('*').eq('user_id',user.id).maybeSingle();
+  if(error){console.error(error);return}
+  if(data)preferences={...preferences,...data};
+  else{
+    const payload={user_id:user.id,weekly_learning_minutes:420,daily_learning_minutes:45,session_length_minutes:45,default_priority:'Medium'};
+    const {data:created,error:createError}=await supa.from('user_preferences').insert(payload).select().single();
+    if(!createError&&created)preferences={...preferences,...created};
+  }
+  applyTheme();
+}
+async function savePreferences(patch){
+  if(!user||!supa)return false;
+  const payload={user_id:user.id,...patch};
+  const {data,error}=await supa.from('user_preferences').upsert(payload).select().single();
+  if(error){toast('Could not save preferences: '+error.message);return false}
+  preferences={...preferences,...data};
+  applyTheme();
+  return true;
+}
+async function loadAuditEvents(){
+  if(!user||!supa){auditEvents=[];return}
+  const {data,error}=await supa.from('audit_events').select('*').order('occurred_at',{ascending:false}).limit(300);
+  if(error){console.error(error);auditEvents=[];return}
+  auditEvents=data||[];
+}
+async function trackAudit(action,targetType=null,targetId=null,metadata={}){
+  if(!user||!supa)return;
+  const {data,error}=await supa.from('audit_events').insert({
+    user_id:user.id,action,target_type:targetType,target_id:targetId?String(targetId):null,
+    metadata:{...metadata,page:currentView,url:window.location.pathname}
+  }).select().single();
+  if(!error&&data)auditEvents.unshift(data);
+}
+function applyTheme(){
+  const theme=preferences.theme||'system';
+  document.body.classList.toggle('dark',theme==='dark');
+  document.body.classList.toggle('light-theme',theme==='light');
+  const toggle=document.getElementById('theme-toggle');
+  if(toggle)toggle.textContent=theme==='dark'?'☀':theme==='light'?'☾':'◐';
+}
+function minutesUntil(date){return Math.round((date-Date.now())/60000)}
+function shouldSendScheduledNotification(now){
+  if(!preferences.browser_notifications_enabled||preferences.notification_frequency==='off')return false;
+  if(!('Notification' in window)||Notification.permission!=='granted')return false;
+  const last=preferences.last_notification_at?new Date(preferences.last_notification_at):null;
+  const frequency=preferences.notification_frequency;
+  if(last){
+    const elapsed=(now-last)/60000;
+    if(frequency==='hourly'&&elapsed<60)return false;
+    if(frequency==='daily'&&elapsed<1440)return false;
+    if(frequency==='weekly'&&elapsed<10080)return false;
+    if(frequency==='immediate'&&elapsed<15)return false;
+  }
+  if(frequency==='immediate'||frequency==='hourly')return true;
+  const [hh,mm]=String(preferences.notification_time||'09:00').split(':').map(Number);
+  const currentMinutes=now.getHours()*60+now.getMinutes();
+  const target=hh*60+mm;
+  if(Math.abs(currentMinutes-target)>2)return false;
+  if(frequency==='weekly'&&now.getDay()!==1)return false;
+  return true;
+}
+async function checkNotifications(){
+  if(!user||!supa||!preferences.browser_notifications_enabled)return;
+  const now=new Date();
+  if(!shouldSendScheduledNotification(now))return;
+  const overdue=preferences.overdue_reminders_enabled?resources.filter(r=>r.due_date&&new Date(r.due_date)<now&&Number(r.progress)<100).length:0;
+  const currentSprint=sprintsData.find(sp=>sp.status==='active');
+  const sprintSoon=preferences.sprint_deadline_reminders_enabled&&currentSprint?.end_date
+    ?minutesUntil(new Date(currentSprint.end_date+'T23:59:59'))<=2880&&minutesUntil(new Date(currentSprint.end_date+'T23:59:59'))>=0:false;
+  const noActivityToday=preferences.learning_reminders_enabled&&!activitiesData.some(a=>{const d=new Date(a.occurred_at);return d.toDateString()===now.toDateString()});
+  const weeklySummary=preferences.weekly_summary_enabled&&preferences.notification_frequency==='weekly';
+  let title='LearnFlow reminder',body='';
+  if(overdue)body=overdue+' overdue learning item'+(overdue===1?'':'s')+' need your attention.';
+  else if(sprintSoon)body='Your current sprint is nearing its deadline.';
+  else if(noActivityToday)body='You have not logged a learning session today.';
+  else if(weeklySummary)body=`This week: ${activitiesData.length} learning sessions logged across your workspace.`;
+  else return;
+  const notification=new Notification(title,{body});
+  notification.onclick=()=>window.focus();
+  await supa.from('user_preferences').update({last_notification_at:now.toISOString()}).eq('user_id',user.id);
+  preferences.last_notification_at=now.toISOString();
+  await trackAudit('notification_sent','notification',null,{title,body});
+}
+function startNotificationScheduler(){
+  if(notificationTimer)clearInterval(notificationTimer);
+  notificationTimer=setInterval(checkNotifications,60000);
+}
+
 async function loadResources(){
   if(!user||!supa){resetDemoWorkspace();return}
   const {data,error}=await supa.from('resources').select('*').order('created_at',{ascending:false});
@@ -150,7 +249,12 @@ async function initSupabase(){
     const {data,error}=await supa.auth.getUser();
     if(!error)user=data.user||null;
     await refreshSessionState();
-    supa.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;await refreshSessionState()});
+    supa.auth.onAuthStateChange(async(event,session)=>{
+      user=session?.user||null;
+      await refreshSessionState();
+      if(event==='SIGNED_IN'&&user)await trackAudit('login','auth',user.id,{email:user.email});
+      if(event==='SIGNED_OUT')render();
+    });
   }catch(error){
     console.error('Supabase initialization failed:',error);
     user=null;
@@ -162,6 +266,8 @@ async function refreshSessionState(){
   await loadProfile();
   await loadProfiles();
   await loadDeletionRequests();
+  await loadPreferences();
+  await loadAuditEvents();
   updateAuthButton();
   updateRoleUI();
   if(!user){
@@ -193,7 +299,7 @@ function updateRoleUI(){
   if(userName)userName.textContent=profile?.display_name||user?.email?.split('@')[0]||'Guest';
 }
 async function requestAccountDeletion(){if(!user||!supa)return;const {data:existing}=await supa.from('account_deletion_requests').select('id,status').eq('user_id',user.id).eq('status','pending').maybeSingle();if(existing){toast('Your delete request is already with an Admin');return}const {error}=await supa.from('account_deletion_requests').insert({user_id:user.id});if(error){toast('Could not send delete request: '+error.message);return}toast('Delete request sent to Admin');}async function authAction(){
-  if(user){const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
+  if(user){await trackAudit('logout','auth',user.id,{email:user.email});const {error}=await supa.auth.signOut();if(error)toast(error.message);return}
   currentView='login';
   document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.remove('active'));
   const breadcrumb=document.getElementById('breadcrumb-current');
