@@ -586,10 +586,15 @@ function render(){
     }
   }catch(error){
     console.error('LearnFlow view render failed:',error);
-    currentView='overview';
-    try{root.innerHTML=overview()}catch(fallbackError){
-      console.error('LearnFlow overview fallback failed:',fallbackError);
-      root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Please refresh this page. Your saved workspace data is not affected.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+    if(currentView==='community'){
+      const message=esc(error?.message||'Unknown rendering error');
+      root.innerHTML='<div class="community-page"><div class="community-empty"><strong>Community could not load</strong><p>'+message+'</p><p>Your learning data has not been changed. Open the browser console for technical details.</p><button class="primary-button" id="recover-app">Retry Community</button></div></div>';
+    }else{
+      currentView='overview';
+      try{root.innerHTML=overview()}catch(fallbackError){
+        console.error('LearnFlow overview fallback failed:',fallbackError);
+        root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Please refresh this page. Your saved workspace data is not affected.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+      }
     }
   }
   try{bindEvents();window.bindCommunityEvents?.()}catch(error){console.error('LearnFlow event binding failed:',error)}
@@ -1046,7 +1051,7 @@ function bindEvents(){
     const status=document.querySelector(`[data-access-user="${id}"]`)?.value||'active';
     await updateAccess(id,role,status);
   });
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('[data-share-resource]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();window.toggleCommunityShare?.(b.dataset.shareResource)}));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
   document.querySelectorAll('.course-card[draggable="true"]').forEach(card=>{
     card.ondragstart=e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.id);card.classList.add('dragging')};
     card.ondragend=()=>card.classList.remove('dragging');
