@@ -111,7 +111,7 @@ using (user_id=(select auth.uid()) and public.has_active_access());
 -- Attribution is sourced from the signed-in member's own profile, never from client-supplied labels.
 create or replace function private.set_community_actor_metadata()
 returns trigger language plpgsql security definer set search_path = ''
-as $
+as $community_actor$
 declare
   v_name text;
   v_role text;
@@ -135,7 +135,7 @@ begin
   end if;
   return new;
 end;
-$;
+$community_actor$;
 revoke all on function private.set_community_actor_metadata() from public,anon;
 grant execute on function private.set_community_actor_metadata() to authenticated;
 create trigger community_publications_set_actor
