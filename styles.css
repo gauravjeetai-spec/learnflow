@@ -44,3 +44,40 @@
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+.resource-share-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}
+.share-state{font-size:9px;color:var(--muted)}
+.community-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0}
+.community-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.community-card{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.community-card h3{font-family:'Space Grotesk';font-size:14px;line-height:1.35;margin:9px 0 5px}
+.community-card p{font-size:11px;color:var(--muted);line-height:1.55;margin:9px 0}
+.community-meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px}
+.community-author{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}
+.community-author strong{color:var(--text)}
+.community-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px;padding-top:11px;border-top:1px solid var(--border)}
+.community-actions button{flex:1;white-space:nowrap}
+.community-comment{padding:10px 0;border-bottom:1px solid var(--border)}
+.community-comment:last-child{border-bottom:0}
+.community-comment p{font-size:11px;line-height:1.5;margin-top:5px;white-space:pre-wrap}
+.community-comment small{font-size:9px;color:var(--muted)}
+.community-comment-form{display:grid;gap:8px;margin-top:15px}
+.community-comment-form textarea{width:100%;min-height:75px;border:1px solid var(--border);border-radius:7px;padding:10px;background:var(--surface);color:var(--text);font:inherit;font-size:11px}
+.community-count{font-size:10px;color:var(--muted)}
+@media(max-width:1050px){.community-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.community-grid{grid-template-columns:1fr}.community-actions button{flex:1 1 28%}}
+
+
+/* Community is a focused shared-learning space, visually separate from the personal dashboard. */
+.community-page{max-width:1180px;margin:0 auto;padding:34px 34px 70px;min-height:calc(100vh - 70px);background:var(--bg)}
+.community-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:26px 28px;background:linear-gradient(120deg,#172a46,#244a70);color:#fff;border-radius:16px}
+.community-kicker{font-size:9px;font-weight:800;letter-spacing:.16em;color:#b8d3ee;margin-bottom:10px}
+.community-header h1{font:700 30px 'Space Grotesk';letter-spacing:-.04em;margin:0 0 8px}.community-header p{font-size:12px;color:#d3e0ee;max-width:510px;line-height:1.6;margin:0}
+.community-total{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap}.community-total strong{font:700 28px 'Space Grotesk'}.community-total span{font-size:10px;color:#c3d6e8}
+.community-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:22px 0 18px;padding-bottom:14px;border-bottom:1px solid var(--border)}.community-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0}.community-tab{padding:9px 13px;border-radius:7px;font-size:11px;color:var(--muted);background:transparent}.community-tab.active{background:var(--surface);color:var(--accent);box-shadow:0 0 0 1px var(--border);font-weight:700}
+.community-search{display:flex;align-items:center;gap:8px;min-width:245px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted)}.community-search input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:11px}
+.community-feed-heading{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px;font-size:11px}.community-feed-heading span{color:var(--muted);font-size:10px}.community-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.community-card{padding:18px;border-radius:12px;box-shadow:none}.community-card h3{font-size:16px;margin:11px 0 8px}
+.community-actions{display:flex;gap:7px;flex-wrap:wrap}.community-action{border:1px solid var(--border);background:var(--surface-2);border-radius:7px;padding:8px 11px;font-size:10px;color:var(--text)}.community-action.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.community-empty{padding:65px 20px;text-align:center;border:1px dashed var(--border);border-radius:13px;background:var(--surface)}.community-empty-icon{font-size:28px;color:var(--accent);margin-bottom:12px}.community-empty strong{display:block;font:600 15px 'Space Grotesk';color:var(--text);margin-bottom:7px}.community-empty p{font-size:11px;color:var(--muted)}
+.community-mention-wrap{position:relative}.community-mention-suggestions{position:absolute;z-index:20;left:0;right:0;bottom:calc(100% + 5px);max-height:190px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--surface);box-shadow:var(--shadow);padding:5px}.community-mention-suggestions[hidden]{display:none}.community-mention-option{display:flex;align-items:center;gap:9px;width:100%;padding:8px;border-radius:6px;text-align:left}.community-mention-option:hover{background:var(--surface-2)}.community-mention-option span:last-child{display:grid;gap:2px}.community-mention-option strong{font-size:11px;color:var(--text)}.community-mention-option small,.community-mention-hint,.community-mention-empty{font-size:9px;color:var(--muted)}.community-mention-avatar{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:700}.community-mention-tag{color:var(--accent);font-weight:700;background:var(--accent-soft);border-radius:4px;padding:1px 3px}.community-mention-hint{margin-top:-3px}.community-mention-empty{padding:10px}
+@media(max-width:800px){.community-page{padding:22px 16px 45px}.community-header{padding:22px 19px}.community-controls{align-items:stretch;flex-direction:column}.community-search{min-width:0}.community-grid{grid-template-columns:1fr}}@media(max-width:650px){.community-header h1{font-size:25px}.community-total strong{font-size:23px}.community-header{gap:12px}}

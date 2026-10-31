@@ -340,3 +340,22 @@ Added a Learner Settings page covering profile, learning preferences, notificati
 - The main view renderer has a recovery fallback instead of allowing a renderer error to leave the workspace blank.
 - Production JS/CSS/HTML assets use no-store caching, with versioned app/style references to prevent stale browser assets from masking current fixes.
 - A lightweight boot watchdog shows a refresh action if the application bundle fails to populate the main view.
+
+
+### Community Learning Board — implementation in progress
+
+- Shared learning cards are published as a separate, safe snapshot. Private progress, personal notes, due dates, sprint links and activity history are never exposed in community queries.
+- Active Learners, Mentors and Admins can discover, like, bookmark and comment on shared cards.
+- All roles can copy a shared resource into their own board with a fresh private progress state.
+- Mentors and Admins can follow the original shared resource; updates to its public title, provider, URL, goal and skills are reflected in the shared snapshot.
+- Owners can edit the community description and unpublish at any time.
+
+
+### Community Learning Board — UX hardening — 2026-10-31
+
+- Community discovery, share/unshare, independent copies, mentor/admin follows, likes, bookmarks and comments are implemented in `community.js`.
+- The community publication snapshot exposes only resource title, type, provider, URL, goal, skills, an explicitly public community description, and creator attribution. Personal progress, due dates, sprint assignments, activity history and private notes are not published.
+- Learners see Discover, Bookmarks and My shares; the Following tab is reserved for active Mentors and Admins, matching the role permissions enforced by database RLS.
+- Community comments now load the latest 500 entries and display them in chronological order.
+- A user cannot create a redundant copy of their own published card. Copying another member's card creates an independent resource and carries over only the explicitly public community description.
+- This is an incremental UX hardening pass; production promotion remains separate and requires user testing and explicit approval.
