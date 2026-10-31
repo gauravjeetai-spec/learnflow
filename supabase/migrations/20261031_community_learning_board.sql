@@ -69,11 +69,14 @@ using (public.has_active_access());
 create policy "Owners can publish their own resources"
 on public.community_publications for insert to authenticated
 with check (owner_id = (select auth.uid()) and public.has_active_access()
-  and exists(select 1 from public.resources r where r.id=resource_id and r.user_id=(select auth.uid())));
+  and owner_role=(select p.role from public.profiles p where p.user_id=(select auth.uid()) and p.access_status='active')
+  and exists(select 1 from public.resources r where r.id=community_publications.resource_id and r.user_id=(select auth.uid())));
 create policy "Owners can update their own publications"
 on public.community_publications for update to authenticated
 using (owner_id = (select auth.uid()) and public.has_active_access())
-with check (owner_id = (select auth.uid()) and public.has_active_access());
+with check (owner_id = (select auth.uid()) and public.has_active_access()
+  and owner_role=(select p.role from public.profiles p where p.user_id=(select auth.uid()) and p.access_status='active')
+  and exists(select 1 from public.resources r where r.id=community_publications.resource_id and r.user_id=(select auth.uid())));
 create policy "Owners can unpublish their own resources"
 on public.community_publications for delete to authenticated
 using (owner_id = (select auth.uid()) and public.has_active_access());
@@ -98,6 +101,7 @@ using (public.has_active_access() and exists(select 1 from public.community_publ
 create policy "Active users can comment on shared resources"
 on public.community_comments for insert to authenticated
 with check (user_id=(select auth.uid()) and public.has_active_access()
+  and author_role=(select p.role from public.profiles p where p.user_id=(select auth.uid()) and p.access_status='active')
   and exists(select 1 from public.community_publications p where p.id=publication_id));
 create policy "Users can delete their own community comments"
 on public.community_comments for delete to authenticated
@@ -105,7 +109,7 @@ using (user_id=(select auth.uid()) and public.has_active_access());
 
 -- Keep the published learning details current while leaving the separate community description untouched.
 create or replace function public.sync_community_publication_from_resource()
-returns trigger language plpgsql set search_path = public
+returns trigger language plpgsql set search_path = ''
 as $$
 begin
   update public.community_publications

@@ -5,6 +5,7 @@ let communityComments=[];
 let communityTab='discover';
 let communitySearch='';
 
+function communitySafeUrl(value){try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.href:null}catch{return null}}
 function communityIsPublished(resourceId){
   return communityPublications.some(p=>String(p.resource_id)===String(resourceId));
 }
@@ -45,7 +46,7 @@ function communityOwnerCard(p){
     <div class="community-author"><span class="avatar avatar-blue">${esc((p.owner_name||'L').trim().charAt(0).toUpperCase())}</span><span><strong>${esc(p.owner_name||'LearnFlow member')}</strong> · ${esc((p.owner_role||'learner').charAt(0).toUpperCase()+(p.owner_role||'learner').slice(1))}</span></div>
     ${p.goal?`<p><strong>Learning goal:</strong> ${esc(p.goal)}</p>`:''}
     ${p.description?`<p>${esc(p.description)}</p>`:''}
-    ${p.url?`<p><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open learning resource ↗</a></p>`:''}
+    ${communitySafeUrl(p.url)?`<p><a href="${esc(communitySafeUrl(p.url))}" target="_blank" rel="noopener noreferrer">Open learning resource ↗</a></p>`:''}
     <div class="tag-row">${(p.skills||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
     <div class="community-count">${communityCounts(p.id,'like')} likes · ${communityComments.filter(c=>c.publication_id===p.id).length} comments · ${communityCounts(p.id,'bookmark')} saves</div>
     <div class="community-actions">
@@ -89,7 +90,7 @@ async function openCommunityShare(resourceId){
   document.getElementById('community-share-form').onsubmit=async e=>{
     e.preventDefault();
     const description=String(new FormData(e.target).get('description')||'').trim()||null;
-    const payload={resource_id:r.id,owner_id:user.id,title:r.title,type:r.type,provider:r.provider||'Independent',url:r.url||null,goal:r.goal||null,skills:r.skills||[],description,owner_name:profile?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'LearnFlow member',owner_role:profile?.role||'learner'};
+    const payload={resource_id:r.id,owner_id:user.id,title:r.title,type:r.type,provider:r.provider||'Independent',url:communitySafeUrl(r.url),goal:r.goal||null,skills:r.skills||[],description,owner_name:profile?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'LearnFlow member',owner_role:profile?.role||'learner'};
     const result=existing
       ?await supa.from('community_publications').update({description}).eq('id',existing.id).select().single()
       :await supa.from('community_publications').insert(payload).select().single();
@@ -122,7 +123,7 @@ async function communityCopy(publicationId){
   const p=communityPublications.find(x=>x.id===publicationId);
   if(!p||!user)return;
   const {data,error}=await supa.from('resources').insert({
-    user_id:user.id,title:p.title,type:p.type,provider:p.provider||'Independent',url:p.url||null,
+    user_id:user.id,title:p.title,type:p.type,provider:p.provider||'Independent',url:communitySafeUrl(p.url),
     goal:p.goal||null,skills:p.skills||[],status:'backlog',progress:0,priority:'Medium',
     due_date:null,estimated_hours:null,notes:null,sprint_id:null
   }).select().single();
