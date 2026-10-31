@@ -18,7 +18,7 @@ async function loadCommunityData(){
   const [pubs,interactions,comments]=await Promise.all([
     supa.from('community_publications').select('*').order('created_at',{ascending:false}),
     supa.from('community_interactions').select('*'),
-    supa.from('community_comments').select('*').order('created_at',{ascending:true}).limit(500)
+    supa.from('community_comments').select('*').order('created_at',{ascending:false}).limit(500)
   ]);
   if(pubs.error||interactions.error||comments.error){
     console.error('Community data load failed:',pubs.error||interactions.error||comments.error);
@@ -27,7 +27,8 @@ async function loadCommunityData(){
   }
   communityPublications=pubs.data||[];
   communityInteractions=interactions.data||[];
-  communityComments=comments.data||[];
+  // Fetch the newest 500 comments, then display them chronologically.
+  communityComments=(comments.data||[]).reverse();
 }
 function communityInteraction(pubId,type){
   return communityInteractions.find(x=>x.publication_id===pubId&&x.user_id===user?.id&&x.interaction_type===type);
@@ -52,20 +53,21 @@ function communityOwnerCard(p){
     <div class="community-actions">
       <button class="filter-button ${communityInteraction(p.id,'like')?'active':''}" data-community-action="like" data-id="${p.id}">♥ ${communityInteraction(p.id,'like')?'Liked':'Like'}</button>
       <button class="filter-button ${communityInteraction(p.id,'bookmark')?'active':''}" data-community-action="bookmark" data-id="${p.id}">${communityInteraction(p.id,'bookmark')?'★ Saved':'☆ Save'}</button>
-      <button class="filter-button" data-community-action="comments" data-id="${p.id}">Comments</button>
+      <button class="filter-button" data-community-action="comments" data-id="${p.id}">Comments (${communityComments.filter(c=>c.publication_id===p.id).length})</button>
       ${communityCanFollow()?`<button class="filter-button ${communityInteraction(p.id,'follow')?'active':''}" data-community-action="follow" data-id="${p.id}">${communityInteraction(p.id,'follow')?'Following':'＋ Follow'}</button>`:''}
-      <button class="primary-button" data-community-action="copy" data-id="${p.id}">＋ Add to my board</button>
+      ${p.owner_id===user?.id?'<button class="filter-button" disabled>Your share</button>':`<button class="primary-button" data-community-action="copy" data-id="${p.id}">＋ Add to my board</button>`}
     </div>
   </article>`;
 }
 function renderCommunityBoard(){
   if(!user||profile?.access_status!=='active')return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Learn together</div><h1>Community board</h1><p>Sign in with an active LearnFlow account to explore shared learning.</p></div></div></div>`;
+  if(!communityCanFollow()&&communityTab==='following')communityTab='discover';
   let list=communityPublications;
   if(communityTab==='following')list=list.filter(p=>communityInteraction(p.id,'follow'));
   if(communityTab==='bookmarks')list=list.filter(p=>communityInteraction(p.id,'bookmark'));
   if(communityTab==='my-shares')list=list.filter(p=>p.owner_id===user.id);
   if(communitySearch)list=list.filter(p=>[p.title,p.provider,p.goal,p.description,...(p.skills||[])].join(' ').toLowerCase().includes(communitySearch.toLowerCase()));
-  const tabs=[['discover','Discover'],['following','Following'],['bookmarks','Bookmarks'],['my-shares','My shares']];
+  const tabs=[['discover','Discover'],...(communityCanFollow()?[['following','Following']]:[]),['bookmarks','Bookmarks'],['my-shares','My shares']];
   return `<div class="page">
     <div class="page-heading"><div><div class="eyebrow">Learn together</div><h1>Community learning board</h1><p>Discover what others are learning. Share useful resources. Grow together.</p></div><span class="stat-meta">${communityPublications.length} shared cards</span></div>
     <div class="community-tabs">${tabs.map(([key,label])=>`<button class="filter-button ${communityTab===key?'active':''}" data-community-tab="${key}">${label}</button>`).join('')}</div>
@@ -122,10 +124,11 @@ async function communityToggle(publicationId,type){
 async function communityCopy(publicationId){
   const p=communityPublications.find(x=>x.id===publicationId);
   if(!p||!user)return;
+  if(p.owner_id===user.id){toast('This card is already yours');return;}
   const {data,error}=await supa.from('resources').insert({
     user_id:user.id,title:p.title,type:p.type,provider:p.provider||'Independent',url:communitySafeUrl(p.url),
     goal:p.goal||null,skills:p.skills||[],status:'backlog',progress:0,priority:'Medium',
-    due_date:null,estimated_hours:null,notes:null,sprint_id:null
+    due_date:null,estimated_hours:null,notes:p.description||null,sprint_id:null
   }).select().single();
   if(error){toast('Could not copy this card: '+error.message);return}
   await trackAudit('community_resource_copied','resource',data.id,{source_publication_id:p.id,title:p.title});
