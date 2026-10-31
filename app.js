@@ -121,9 +121,15 @@ async function savePreferences(patch){
 }
 async function loadAuditEvents(){
   if(!user||!supa){auditEvents=[];return}
-  const {data,error}=await supa.from('audit_events').select('*').order('occurred_at',{ascending:false}).limit(300);
-  if(error){console.error(error);auditEvents=[];return}
-  auditEvents=data||[];
+  const pageSize=500;
+  const allEvents=[];
+  for(let offset=0;;offset+=pageSize){
+    const {data,error}=await supa.from('audit_events').select('*').order('occurred_at',{ascending:false}).range(offset,offset+pageSize-1);
+    if(error){console.error(error);auditEvents=[];return}
+    allEvents.push(...(data||[]));
+    if(!data||data.length<pageSize)break;
+  }
+  auditEvents=allEvents;
 }
 async function trackAudit(action,targetType=null,targetId=null,metadata={}){
   if(!user||!supa)return;
