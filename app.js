@@ -243,7 +243,7 @@ function syncResourceActivities(){
 async function persistResource(r){
   if(!user||!supa)return true;
   const isNew=!r.id;
-  const payload={title:r.title,type:r.type,provider:r.provider||'Independent',goal:r.goal||null,skills:r.skills||[],status:r.column||'backlog',progress:r.progress||0,priority:r.priority||'Medium',due_date:r.due&&r.due!=='Not scheduled'?r.due:null,estimated_hours:r.estimated_hours??null,notes:r.notes||null,owner_label:user.email?.split('@')[0]||null,sprint_id:r.sprint_id||null};
+  const payload={title:r.title,type:r.type,provider:r.provider||'Independent',url:r.url||null,goal:r.goal||null,skills:r.skills||[],status:r.column||'backlog',progress:r.progress||0,priority:r.priority||'Medium',due_date:r.due&&r.due!=='Not scheduled'?r.due:null,estimated_hours:r.estimated_hours??null,notes:r.notes||null,owner_label:user.email?.split('@')[0]||null,sprint_id:r.sprint_id||null};
   if(typeof r.id==='string')payload.id=r.id;
   const {data,error}=await supa.from('resources').upsert(payload).select().single();
   if(error){console.error(error);toast('Could not save resource: '+error.message);return false}
