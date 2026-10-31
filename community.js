@@ -160,7 +160,7 @@ function openCommunityComments(publicationId){
   const mentionBox=document.getElementById('community-mention-suggestions');
   let mentionRequest=0;
   commentInput?.addEventListener('input',async()=>{
-    const match=commentInput.value.match(/(?:^|\\s)@([^\\n@]*)$/);
+    const match=commentInput.value.match(/(?:^|\s)@([^\n@]*)$/);
     if(!match||match[1].trim().length<2){mentionBox.hidden=true;return}
     const request=++mentionRequest;
     const {data,error}=await supa.rpc('search_community_members',{search_term:match[1].trim()});
@@ -170,7 +170,7 @@ function openCommunityComments(publicationId){
     mentionBox.hidden=false;
     mentionBox.querySelectorAll('[data-mention-id]').forEach(button=>button.addEventListener('click',()=>{
       const name=button.dataset.mentionName,id=button.dataset.mentionId;
-      commentInput.value=commentInput.value.replace(/(^|\\s)@[^\\n@]*$/,(_,prefix)=>prefix+'@['+name+'] ');
+      commentInput.value=commentInput.value.replace(/(^|\s)@[^\n@]*$/,(_,prefix)=>prefix+'@['+name+'] ');
       if(!mentionedUserIds.includes(id))mentionedUserIds.push(id);
       mentionBox.hidden=true;commentInput.focus();
     }));
