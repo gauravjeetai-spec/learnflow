@@ -290,6 +290,7 @@ async function refreshSessionState(){
     if(currentView==='name-setup'){await loadResources();await loadWorkspaceData();render();return}
     await loadResources();
     await loadWorkspaceData();
+    await window.loadCommunityData?.();
   }else{
     resources=[];goalsData=[];skillsData=[];sprintsData=[];activitiesData=[];
   }
@@ -322,9 +323,11 @@ async function requestAccountDeletion(){if(!user||!supa)return;const {data:exist
   render();
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view[0].toUpperCase()+view.slice(1);render()}
+function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view==='community'?'Community':view[0].toUpperCase()+view.slice(1);render()}
 function resourceCard(r){
-  return `<article class="course-card" draggable="true" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${r.goal}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${r.due}</span><span class="owner-badge" title="${esc(r.ownerName)}"><span class="avatar avatar-${r.color}">${r.owner}</span><span class="owner-name">${esc(r.ownerName)}</span></span></div></article>`;
+  const canShare=!!user&&String(r.user_id||user.id)===String(user.id);
+  const shared=window.communityIsPublished?.(r.id);
+  return `<article class="course-card" draggable="true" data-id="${r.id}"><div class="card-top"><span class="type-label">${esc(r.type)} · ${esc(r.provider)}</span><span class="priority-dot ${r.priority.toLowerCase()}" title="${r.priority} priority"></span></div><h4>${esc(r.title)}</h4><div class="provider">${esc(r.goal||'')}</div><div class="card-progress"><div class="progress-caption"><span>Progress</span><b>${r.progress}%</b></div><div class="progress-track"><div class="progress-fill ${r.progress===100?'green':''}" style="width:${r.progress}%"></div></div></div><div class="tag-row">${r.skills.map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div><div class="card-footer"><span class="due ${r.priority==='High'?'soon':''}">◷ ${esc(r.due)}</span><span class="owner-badge" title="${esc(r.ownerName)}"><span class="avatar avatar-${r.color}">${esc(r.owner)}</span><span class="owner-name">${esc(r.ownerName)}</span></span></div>${canShare?`<div class="resource-share-row"><span class="share-state">${shared?'Published to community':'Private card'}</span><button class="filter-button" data-share-resource="${r.id}">${shared?'Edit share':'Share'}</button></div>`:''}</article>`;
 }
 function loginView(){
   return `<div class="auth-page">
@@ -572,7 +575,7 @@ function animateHighlightNumbers(){
 }
 function render(){
   if(!root)return;
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,community:()=>window.renderCommunityBoard?window.renderCommunityBoard():'<div class="page"><div class="empty-state">Community board is loading…</div></div>',login:loginView,'name-setup':nameSetup};
   try{
     if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){
       root.innerHTML=accessGate();
@@ -588,7 +591,7 @@ function render(){
       root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Please refresh this page. Your saved workspace data is not affected.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
     }
   }
-  try{bindEvents()}catch(error){console.error('LearnFlow event binding failed:',error)}
+  try{bindEvents();window.bindCommunityEvents?.()}catch(error){console.error('LearnFlow event binding failed:',error)}
   try{updateNavCounts()}catch(error){console.error('LearnFlow navigation count update failed:',error)}
   requestAnimationFrame(()=>{try{animateHighlightNumbers()}catch(error){console.error('LearnFlow number animation failed:',error)}});
   const recover=document.getElementById('recover-app');
@@ -660,6 +663,7 @@ function openResource(id){
   modal.querySelectorAll('[data-detail-tab]').forEach(tab=>tab.onclick=()=>{modal.querySelectorAll('[data-detail-tab]').forEach(x=>x.classList.toggle('active',x===tab));const content=document.getElementById('detail-tab-content');if(content)content.innerHTML=tab.dataset.detailTab==='activity'?activityRows():tab.dataset.detailTab==='notes'?notesView():historyView()});
   document.getElementById('edit-detail').onclick=()=>openEditResource(r.id);
   document.getElementById('log-detail').onclick=()=>logActivity(r.id);
+  if(user){const shareButton=document.createElement('button');shareButton.className='secondary-button';shareButton.style.width='100%';shareButton.style.marginTop='8px';shareButton.textContent=window.communityIsPublished?.(r.id)?'Manage community share':'Share to community';shareButton.onclick=()=>window.openCommunityShare?.(r.id);document.getElementById('delete-detail').before(shareButton)}
   document.getElementById('delete-detail').onclick=async()=>{
     if(!confirm(`Delete "${r.title}"? This cannot be undone.`))return;
     if(await deleteResource(r.id)){closeModal();toast('Learning resource deleted');render()}
@@ -785,7 +789,7 @@ function bindEvents(){
     const status=document.querySelector(`[data-access-user="${id}"]`)?.value||'active';
     await updateAccess(id,role,status);
   });
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('[data-share-resource]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();window.openCommunityShare?.(b.dataset.shareResource)}));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
   document.querySelectorAll('.course-card[draggable="true"]').forEach(card=>{
     card.ondragstart=e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.id);card.classList.add('dragging')};
     card.ondragend=()=>card.classList.remove('dragging');
