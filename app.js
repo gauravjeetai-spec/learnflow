@@ -791,7 +791,7 @@ function bindEvents(){
     const status=document.querySelector(`[data-access-user="${id}"]`)?.value||'active';
     await updateAccess(id,role,status);
   });
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('[data-share-resource]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();window.openCommunityShare?.(b.dataset.shareResource)}));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));document.querySelectorAll('[data-view-link]').forEach(b=>b.onclick=()=>setView(b.dataset.viewLink));document.querySelectorAll('[data-share-resource]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();window.toggleCommunityShare?.(b.dataset.shareResource)}));document.querySelectorAll('.course-card,.data-table tr[data-id]').forEach(c=>c.onclick=()=>openResource(c.dataset.id));
   document.querySelectorAll('.course-card[draggable="true"]').forEach(card=>{
     card.ondragstart=e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.id);card.classList.add('dragging')};
     card.ondragend=()=>card.classList.remove('dragging');
