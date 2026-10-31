@@ -868,7 +868,7 @@ function animateHighlightNumbers(){
 }
 function render(){
   if(!root)return;
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,login:loginView,'name-setup':nameSetup};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,community:()=>window.renderCommunityBoard?window.renderCommunityBoard():'<div class="page"><div class="empty-state">Community board is loading…</div></div>',login:loginView,'name-setup':nameSetup};
   try{
     if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){
       root.innerHTML=accessGate();
@@ -878,15 +878,20 @@ function render(){
     }
   }catch(error){
     console.error('LearnFlow view render failed:',error);
-    currentView='overview';
-    try{
-      root.innerHTML=overview();
-    }catch(fallbackError){
-      console.error('LearnFlow overview fallback failed:',fallbackError);
-      root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Your workspace is safe. Refresh LearnFlow to retry the interface.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+    if(currentView==='community'){
+      const message=esc(error?.message||'Unknown rendering error');
+      root.innerHTML='<div class="community-page"><div class="community-empty"><strong>Community could not load</strong><p>'+message+'</p><p>Your learning data has not been changed. Open the browser console for technical details.</p><button class="primary-button" id="recover-app">Retry Community</button></div></div>';
+    }else{
+      currentView='overview';
+      try{
+        root.innerHTML=overview();
+      }catch(fallbackError){
+        console.error('LearnFlow overview fallback failed:',fallbackError);
+        root.innerHTML='<div class="page"><div class="empty-state"><strong>LearnFlow is recovering</strong><p>Your workspace is safe. Refresh LearnFlow to retry the interface.</p><button class="primary-button" id="recover-app">Refresh LearnFlow</button></div></div>';
+      }
     }
   }
-  try{bindEvents()}catch(error){console.error('LearnFlow event binding failed:',error)}
+  try{bindEvents();window.bindCommunityEvents?.()}catch(error){console.error('LearnFlow event binding failed:',error)}
   try{updateNavCounts()}catch(error){console.error('LearnFlow navigation count update failed:',error)}
   requestAnimationFrame(()=>{try{animateHighlightNumbers()}catch(error){console.error('LearnFlow number animation failed:',error)}});
   const recover=document.getElementById('recover-app');
