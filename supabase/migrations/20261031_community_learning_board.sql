@@ -107,6 +107,44 @@ create policy "Users can delete their own community comments"
 on public.community_comments for delete to authenticated
 using (user_id=(select auth.uid()) and public.has_active_access());
 
+
+-- Attribution is sourced from the signed-in member's own profile, never from client-supplied labels.
+create or replace function private.set_community_actor_metadata()
+returns trigger language plpgsql security definer set search_path = ''
+as $
+declare
+  v_name text;
+  v_role text;
+begin
+  select coalesce(nullif(p.display_name,''),'LearnFlow member'),p.role
+    into v_name,v_role
+  from public.profiles p
+  where p.user_id=(select auth.uid()) and p.access_status='active';
+  if v_role is null then
+    raise exception 'An active LearnFlow profile is required';
+  end if;
+  if tg_table_name='community_publications' then
+    new.owner_id := (select auth.uid());
+    new.owner_name := v_name;
+    new.owner_role := v_role;
+    if tg_op='UPDATE' then new.updated_at := now(); end if;
+  else
+    new.user_id := (select auth.uid());
+    new.author_name := v_name;
+    new.author_role := v_role;
+  end if;
+  return new;
+end;
+$;
+revoke all on function private.set_community_actor_metadata() from public,anon;
+grant execute on function private.set_community_actor_metadata() to authenticated;
+create trigger community_publications_set_actor
+before insert or update on public.community_publications
+for each row execute function private.set_community_actor_metadata();
+create trigger community_comments_set_actor
+before insert on public.community_comments
+for each row execute function private.set_community_actor_metadata();
+
 -- Keep the published learning details current while leaving the separate community description untouched.
 create or replace function public.sync_community_publication_from_resource()
 returns trigger language plpgsql set search_path = ''
