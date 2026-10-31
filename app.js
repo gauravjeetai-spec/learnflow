@@ -284,6 +284,7 @@ async function refreshSessionState(){
   if(!user){
     currentView='overview';
     resetDemoWorkspace();
+    await window.loadCommunityData?.();
   }else if(profile?.access_status==='active'){
     if(!profile.name_setup_completed)currentView='name-setup';
     else if(currentView==='login'||currentView==='name-setup')currentView='overview';
@@ -664,7 +665,7 @@ function openResource(id){
   modal.querySelectorAll('[data-detail-tab]').forEach(tab=>tab.onclick=()=>{modal.querySelectorAll('[data-detail-tab]').forEach(x=>x.classList.toggle('active',x===tab));const content=document.getElementById('detail-tab-content');if(content)content.innerHTML=tab.dataset.detailTab==='activity'?activityRows():tab.dataset.detailTab==='notes'?notesView():historyView()});
   document.getElementById('edit-detail').onclick=()=>openEditResource(r.id);
   document.getElementById('log-detail').onclick=()=>logActivity(r.id);
-  if(user){const shareButton=document.createElement('button');shareButton.className='secondary-button';shareButton.style.width='100%';shareButton.style.marginTop='8px';shareButton.textContent=window.communityIsPublished?.(r.id)?'Manage community share':'Share to community';shareButton.onclick=()=>window.openCommunityShare?.(r.id);document.getElementById('delete-detail').before(shareButton)}
+  if(user&&String(r.user_id)===String(user.id)){const shareButton=document.createElement('button');shareButton.className='secondary-button';shareButton.style.width='100%';shareButton.style.marginTop='8px';shareButton.textContent=window.communityIsPublished?.(r.id)?'Manage community share':'Share to community';shareButton.onclick=()=>window.openCommunityShare?.(r.id);document.getElementById('delete-detail').before(shareButton)}
   document.getElementById('delete-detail').onclick=async()=>{
     if(!confirm(`Delete "${r.title}"? This cannot be undone.`))return;
     if(await deleteResource(r.id)){closeModal();toast('Learning resource deleted');render()}

@@ -27,6 +27,9 @@ create table if not exists public.community_interactions (
   unique(publication_id,user_id,interaction_type)
 );
 create index if not exists community_interactions_publication_idx on public.community_interactions(publication_id,interaction_type);
+create index if not exists community_interactions_user_idx on public.community_interactions(user_id);
+create index if not exists community_comments_user_idx on public.community_comments(user_id);
+
 
 create table if not exists public.community_comments (
   id uuid primary key default gen_random_uuid(),
