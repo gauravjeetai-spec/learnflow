@@ -51,31 +51,43 @@ function communityOwnerCard(p){
     <div class="tag-row">${(p.skills||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
     <div class="community-count">${communityCounts(p.id,'like')} likes · ${communityComments.filter(c=>c.publication_id===p.id).length} comments · ${communityCounts(p.id,'bookmark')} saves</div>
     <div class="community-actions">
-      <button class="filter-button ${communityInteraction(p.id,'like')?'active':''}" data-community-action="like" data-id="${p.id}">♥ ${communityInteraction(p.id,'like')?'Liked':'Like'}</button>
-      <button class="filter-button ${communityInteraction(p.id,'bookmark')?'active':''}" data-community-action="bookmark" data-id="${p.id}">${communityInteraction(p.id,'bookmark')?'★ Saved':'☆ Save'}</button>
-      <button class="filter-button" data-community-action="comments" data-id="${p.id}">Comments (${communityComments.filter(c=>c.publication_id===p.id).length})</button>
+      <button class="community-action ${communityInteraction(p.id,'like')?'active':''}" data-community-action="like" data-id="${p.id}">♥ ${communityInteraction(p.id,'like')?'Liked':'Like'} · ${communityCounts(p.id,'like')}</button>
+      <button class="community-action ${communityInteraction(p.id,'bookmark')?'active':''}" data-community-action="bookmark" data-id="${p.id}">${communityInteraction(p.id,'bookmark')?'★ Saved':'☆ Save'}</button>
+      <button class="community-action" data-community-action="comments" data-id="${p.id}">Comment · ${communityComments.filter(c=>c.publication_id===p.id).length}</button>
       ${communityCanFollow()?`<button class="filter-button ${communityInteraction(p.id,'follow')?'active':''}" data-community-action="follow" data-id="${p.id}">${communityInteraction(p.id,'follow')?'Following':'＋ Follow'}</button>`:''}
       ${p.owner_id===user?.id?'<button class="filter-button" disabled>Your share</button>':`<button class="primary-button" data-community-action="copy" data-id="${p.id}">＋ Add to my board</button>`}
     </div>
   </article>`;
 }
 function renderCommunityBoard(){
-  if(!user||profile?.access_status!=='active')return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Learn together</div><h1>Community board</h1><p>Sign in with an active LearnFlow account to explore shared learning.</p></div></div></div>`;
+  if(!user||profile?.access_status!=='active')return `<div class="community-page"><div class="community-header"><div><div class="community-kicker">LEARN TOGETHER</div><h1>Community</h1><p>Sign in with an active LearnFlow account to explore shared learning.</p></div></div></div>`;
   if(!communityCanFollow()&&communityTab==='following')communityTab='discover';
   let list=communityPublications;
   if(communityTab==='following')list=list.filter(p=>communityInteraction(p.id,'follow'));
   if(communityTab==='bookmarks')list=list.filter(p=>communityInteraction(p.id,'bookmark'));
   if(communityTab==='my-shares')list=list.filter(p=>p.owner_id===user.id);
   if(communitySearch)list=list.filter(p=>[p.title,p.provider,p.goal,p.description,...(p.skills||[])].join(' ').toLowerCase().includes(communitySearch.toLowerCase()));
-  const tabs=[['discover','Discover'],...(communityCanFollow()?[['following','Following']]:[]),['bookmarks','Bookmarks'],['my-shares','My shares']];
-  return `<div class="page">
-    <div class="page-heading"><div><div class="eyebrow">Learn together</div><h1>Community learning board</h1><p>Discover what others are learning. Share useful resources. Grow together.</p></div><span class="stat-meta">${communityPublications.length} shared cards</span></div>
-    <div class="community-tabs">${tabs.map(([key,label])=>`<button class="filter-button ${communityTab===key?'active':''}" data-community-tab="${key}">${label}</button>`).join('')}</div>
-    <div class="board-toolbar"><div class="toolbar-left"><input id="community-search" placeholder="Search shared learning…" value="${esc(communitySearch)}" style="border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:7px;padding:9px 11px;font:inherit;font-size:11px;min-width:230px"></div><div class="toolbar-right"><span class="stat-meta">${list.length} resources</span></div></div>
-    ${list.length?`<div class="community-grid">${list.map(communityOwnerCard).join('')}</div>`:`<div class="empty-state"><strong>${communityTab==='my-shares'?'You have not shared anything yet':communityTab==='following'?'You are not following any cards':communityTab==='bookmarks'?'No saved cards yet':'No shared learning cards yet'}</strong><p>${communityTab==='discover'?'Be the first to publish a useful learning resource.':'Try another tab or discover more shared resources.'}</p></div>`}
+  const tabs=[['discover','Discover'],...(communityCanFollow()?[['following','Following']]:[]),['bookmarks','Saved'],['my-shares','My shares']];
+  return `<div class="community-page"><header class="community-header"><div><div class="community-kicker">LEARN TOGETHER</div><h1>Community</h1><p>Explore what people are learning. Share useful resources and exchange ideas.</p></div><div class="community-total"><strong>${communityPublications.length}</strong><span>shared resources</span></div></header>
+    <section class="community-controls"><nav class="community-tabs" aria-label="Community views">${tabs.map(([key,label])=>`<button class="community-tab ${communityTab===key?'active':''}" data-community-tab="${key}">${label}</button>`).join('')}</nav><label class="community-search"><span>⌕</span><input id="community-search" placeholder="Search topics, skills or people…" value="${esc(communitySearch)}"></label></section>
+    <div class="community-feed-heading"><strong>${communityTab==='discover'?'Explore shared learning':communityTab==='my-shares'?'Your shared learning':communityTab==='bookmarks'?'Saved resources':'Resources you follow'}</strong><span>${list.length} ${list.length===1?'resource':'resources'}</span></div>
+    ${list.length?`<div class="community-grid">${list.map(communityOwnerCard).join('')}</div>`:`<div class="community-empty"><div class="community-empty-icon">◎</div><strong>${communityTab==='my-shares'?'You haven’t shared a resource yet':communityTab==='following'?'You’re not following any resources':communityTab==='bookmarks'?'No saved resources yet':'Nothing shared here yet'}</strong><p>${communityTab==='discover'?'When someone shares a learning resource, it will appear here. You can also publish one from your Learning Board.':'Explore Discover to find more learning resources.'}</p></div>`}
   </div>`;
 }
 window.renderCommunityBoard=renderCommunityBoard;
+async function toggleCommunityShare(resourceId){
+  if(!user||!supa){toast('Sign in to share learning resources');return}
+  const existing=communityPublications.find(p=>String(p.resource_id)===String(resourceId));
+  if(existing){openCommunityShare(resourceId);return}
+  const r=resources.find(x=>String(x.id)===String(resourceId));
+  if(!r||String(r.user_id||user.id)!==String(user.id)){toast('Only the resource owner can share this card');return}
+  const payload={resource_id:r.id,owner_id:user.id,title:r.title,type:r.type,provider:r.provider||'Independent',url:communitySafeUrl(r.url),goal:r.goal||null,skills:r.skills||[],description:null,owner_name:profile?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'LearnFlow member',owner_role:profile?.role||'learner'};
+  const {data,error}=await supa.from('community_publications').insert(payload).select().single();
+  if(error){toast('Could not share this card: '+error.message);return}
+  await trackAudit('resource_shared','community_publication',data.id,{title:r.title});
+  await loadCommunityData();render();toast('Shared with the community');
+}
+window.toggleCommunityShare=toggleCommunityShare;
 async function openCommunityShare(resourceId){
   if(!user||!supa){toast('Sign in to share learning resources');return}
   const r=resources.find(x=>String(x.id)===String(resourceId));
@@ -134,17 +146,38 @@ async function communityCopy(publicationId){
   await trackAudit('community_resource_copied','resource',data.id,{source_publication_id:p.id,title:p.title});
   await loadResources();toast('Copied to your Learning Board');setView('board');
 }
+function communityRenderCommentText(value){return esc(value||'').replace(/@\[([^\]]+)\]/g,'<span class="community-mention-tag">@$1</span>')}
 function openCommunityComments(publicationId){
   const p=communityPublications.find(x=>x.id===publicationId);if(!p)return;
   const rows=communityComments.filter(c=>c.publication_id===publicationId);
   modal.className='modal';
   modal.innerHTML=`<div class="detail-head"><div><div class="eyebrow">Community discussion</div><h2>${esc(p.title)}</h2></div><button class="close-button" id="community-comments-close">×</button></div>
-    <div id="community-comment-list">${rows.length?rows.map(c=>`<div class="community-comment"><strong>${esc(c.author_name)}</strong> <small>· ${esc(c.author_role)} · ${new Date(c.created_at).toLocaleString()}</small><p>${esc(c.content)}</p>${c.user_id===user.id?`<button class="filter-button" data-delete-community-comment="${c.id}">Delete</button>`:''}</div>`).join(''):'<div class="empty-state" style="padding:25px">No comments yet. Start the discussion.</div>'}</div>
-    <form class="community-comment-form" id="community-comment-form"><textarea name="content" maxlength="2000" placeholder="Share a useful thought or ask a question…" required></textarea><button class="primary-button">Post comment</button></form>`;
+    <div id="community-comment-list">${rows.length?rows.map(c=>`<div class="community-comment"><strong>${esc(c.author_name)}</strong> <small>· ${esc(c.author_role)} · ${new Date(c.created_at).toLocaleString()}</small><p>${communityRenderCommentText(c.content)}</p>${c.user_id===user.id?`<button class="filter-button" data-delete-community-comment="${c.id}">Delete</button>`:''}</div>`).join(''):'<div class="empty-state" style="padding:25px">No comments yet. Start the discussion.</div>'}</div>
+    <form class="community-comment-form" id="community-comment-form"><div class="community-mention-wrap"><textarea name="content" id="community-comment-input" maxlength="2000" placeholder="Write a comment… Type @ to tag a member" required></textarea><div id="community-mention-suggestions" class="community-mention-suggestions" hidden></div></div><div class="community-mention-hint">Type @ followed by a member’s name to tag them.</div><button class="primary-button">Post comment</button></form>`;
   modalBackdrop.classList.add('open');document.getElementById('community-comments-close').onclick=closeModal;
+  const mentionedUserIds=[];
+  const commentInput=document.getElementById('community-comment-input');
+  const mentionBox=document.getElementById('community-mention-suggestions');
+  let mentionRequest=0;
+  commentInput?.addEventListener('input',async()=>{
+    const match=commentInput.value.match(/(?:^|\\s)@([^\\n@]*)$/);
+    if(!match||match[1].trim().length<2){mentionBox.hidden=true;return}
+    const request=++mentionRequest;
+    const {data,error}=await supa.rpc('search_community_members',{search_term:match[1].trim()});
+    if(request!==mentionRequest)return;
+    if(error||!data?.length){mentionBox.innerHTML='<div class="community-mention-empty">No active members found</div>';mentionBox.hidden=false;return}
+    mentionBox.innerHTML=data.map(m=>`<button type="button" class="community-mention-option" data-mention-id="${m.user_id}" data-mention-name="${esc(m.display_name)}"><span class="community-mention-avatar">${esc((m.display_name||'L').charAt(0).toUpperCase())}</span><span><strong>${esc(m.display_name)}</strong><small>${esc(m.role)}</small></span></button>`).join('');
+    mentionBox.hidden=false;
+    mentionBox.querySelectorAll('[data-mention-id]').forEach(button=>button.addEventListener('click',()=>{
+      const name=button.dataset.mentionName,id=button.dataset.mentionId;
+      commentInput.value=commentInput.value.replace(/(^|\\s)@[^\\n@]*$/,(_,prefix)=>prefix+'@['+name+'] ');
+      if(!mentionedUserIds.includes(id))mentionedUserIds.push(id);
+      mentionBox.hidden=true;commentInput.focus();
+    }));
+  });
   document.getElementById('community-comment-form').onsubmit=async e=>{
     e.preventDefault();const content=String(new FormData(e.target).get('content')||'').trim();if(!content)return;
-    const {error}=await supa.from('community_comments').insert({publication_id:publicationId,user_id:user.id,author_name:profile?.display_name||user.email?.split('@')[0]||'LearnFlow member',author_role:profile?.role||'learner',content});
+    const {error}=await supa.from('community_comments').insert({publication_id:publicationId,user_id:user.id,author_name:profile?.display_name||user.email?.split('@')[0]||'LearnFlow member',author_role:profile?.role||'learner',content,mentioned_user_ids:mentionedUserIds});
     if(error){toast('Could not post comment: '+error.message);return}
     await trackAudit('community_comment_added','community_publication',publicationId);await loadCommunityData();openCommunityComments(publicationId);
   };
