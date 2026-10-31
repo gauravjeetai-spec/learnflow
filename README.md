@@ -340,3 +340,12 @@ Added a Learner Settings page covering profile, learning preferences, notificati
 - The main view renderer has a recovery fallback instead of allowing a renderer error to leave the workspace blank.
 - Production JS/CSS/HTML assets use no-store caching, with versioned app/style references to prevent stale browser assets from masking current fixes.
 - A lightweight boot watchdog shows a refresh action if the application bundle fails to populate the main view.
+
+
+### Community Learning Board — implementation in progress
+
+- Shared learning cards are published as a separate, safe snapshot. Private progress, personal notes, due dates, sprint links and activity history are never exposed in community queries.
+- Active Learners, Mentors and Admins can discover, like, bookmark and comment on shared cards.
+- All roles can copy a shared resource into their own board with a fresh private progress state.
+- Mentors and Admins can follow the original shared resource; updates to its public title, provider, URL, goal and skills are reflected in the shared snapshot.
+- Owners can edit the community description and unpublish at any time.
