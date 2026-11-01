@@ -19,6 +19,37 @@ The production application is deployed from the GitHub `main` branch through Ver
 - Demo board: 2026 Growth & Business Learning
 
 
+## UI/UX design system — Warm Premium SaaS Phase 1 (2026-11-01)
+
+**Approved direction:** Warm Premium SaaS, balanced information density, Inter typography, refined blue brand identity with warm ivory, teal, amber, lavender and terracotta accents. The experience is intended to feel like a professional learning and execution workspace: focused, expressive, readable and welcoming.
+
+### Design foundations
+- Canvas and surfaces: warm ivory application background, white cards, soft neutral borders and restrained layered shadows.
+- Colour semantics: blue for primary actions and navigation; teal for completion and positive momentum; amber for active attention; lavender for skills and learning categories; terracotta for overdue or destructive states.
+- Typography: Inter, with page titles 32–36px, section headings 18–20px, card titles 15–16px, body 14–15px and supporting text 12–13px.
+- Components: consistent primary/secondary/tertiary/destructive actions, visible keyboard focus, readable status labels, consistent radii and progress treatments.
+- Motion: short purposeful transitions, gentle hover feedback, page entrance motion and reduced-motion support.
+- Responsive: desktop-first balanced layouts, tablet reflow, mobile stacked dashboards and horizontally scrollable Kanban lanes.
+
+### Phase 1 implementation
+- Overview: coloured KPI accents, featured sprint and momentum panels, readable activity chart, prioritised focus list and differentiated attention states. Activity chart is driven by real logged activity; zero-activity days remain visually empty.
+- Learning Board: five-column desktop Kanban with improved use of available width, clearer resource cards, readable metadata, refined empty states, tablet reflow and touch-friendly mobile horizontal scrolling. Existing drag-and-drop and resource workflows remain in place.
+- Analytics: differentiated KPI cards, seven-day activity visualisation, resource status breakdown and goal progress. Goal progress is grouped by owner and goal title so identical goal names belonging to different users remain separate. Empty activity days render as empty rather than full-height placeholders.
+
+### Data and compatibility
+- No Supabase schema or migration changes are required for this visual phase.
+- Authentication, RLS, CRUD, resource ownership, drag-and-drop, Community and audit tracking are preserved.
+- All displayed analytics are derived from existing resource and activity data; no sample metrics are introduced.
+- Light mode is the primary visual target. Dark mode retains a coordinated neutral/blue palette and semantic accents; a dedicated full dark-mode QA pass remains a separate follow-up.
+- Cache-busting versions are updated with the production release.
+
+### Phase 1 quality checks
+- Validate JavaScript syntax and inspect the production diff.
+- Check desktop, tablet and mobile layout behaviour, including intentional Kanban horizontal scrolling.
+- Verify zero-activity chart states and per-owner goal separation.
+- Smoke-test navigation, resource cards, drag-and-drop and existing Community access after deployment.
+- Do not reset user data or alter Supabase policies as part of visual work.
+
 ## UI/UX design system — Phase 1 (2026-11-01)
 
 **Design direction:** modern premium SaaS with a little warmth. The visual language prioritizes clarity, calm surfaces, purposeful blue accents, readable typography, consistent component states, and responsive layouts.
