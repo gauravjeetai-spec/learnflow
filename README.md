@@ -19,6 +19,28 @@ The production application is deployed from the GitHub `main` branch through Ver
 - Demo board: 2026 Growth & Business Learning
 
 
+## UI/UX design system — Phase 1 (2026-11-01)
+
+**Design direction:** modern premium SaaS with a little warmth. The visual language prioritizes clarity, calm surfaces, purposeful blue accents, readable typography, consistent component states, and responsive layouts.
+
+### Foundations
+- Typography: Inter across the application, with a consistent hierarchy for page titles, section headings, body copy, labels, and metadata.
+- Core palette: refined blue for primary actions and navigation; warm-neutral canvas and white surfaces; restrained semantic green, amber, red, and purple states.
+- Layout: consistent spacing, rounded surfaces, subtle borders, restrained shadows, and responsive page widths.
+- Components: shared button hierarchy, cards, navigation states, progress indicators, data tables, and form focus states.
+- Motion: short, purposeful transitions and reduced-motion support.
+
+### Phase 1 scope
+- Overview: refined dashboard hierarchy, KPI cards, sprint and momentum panels, learning activity, daily focus, and attention states.
+- Learning Board: responsive five-lane desktop layout, improved resource cards, column spacing, toolbar controls, and mobile horizontal scrolling.
+- Analytics: live seven-day learning activity bars, resource status breakdown, KPI summaries, and progress by goal. Charts use persisted activity/resource data and do not introduce fabricated metrics.
+
+### Implementation notes
+- The design system is centralized in `styles.css` so subsequent pages can adopt the same tokens and component language.
+- Existing Supabase queries, authentication, RLS, resource status workflow, drag-and-drop, and Community behaviour are preserved.
+- Light mode remains the primary design target. Dark-mode tokens are refined for the shared foundations; a full dark-mode visual QA pass remains a later task.
+- This phase is a visual/UI update only; no database schema or migration changes are required.
+
 ## Build status / source of truth
 
 This README is the canonical project record for LearnFlow's implemented architecture and verified progress. After each meaningful, working milestone, update this section and the relevant architecture notes before moving to the next feature.
