@@ -1,3 +1,7 @@
+### Goals & Skills visual refresh — 2026-11-09
+- Goals and Skills cards use a restrained rotating palette (blue, teal, amber, violet, rose and aqua) with matching left-edge accents, soft tinted surfaces and progress indicators.
+- Increased title, description, progress, metadata and action-button legibility; added subtle hover elevation, responsive spacing and reduced-motion support. Dark mode uses the same accent system with dark surfaces.
+
 ### Learning card readability — 2026-11-09
 - Increased resource-card title, metadata, progress, tag, owner, and sharing-control sizes for easier scanning.
 - Improved card padding, spacing, contrast, progress-track thickness, and hover feedback while retaining the private amber and community teal visual states.
