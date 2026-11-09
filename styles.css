@@ -290,3 +290,11 @@ body.dark .analytics-bar-track,body.dark .status-breakdown-track,body.dark .goal
 body.dark .status-breakdown-label,body.dark .goal-owner,body.dark .goal-resource-count{color:#a6b2c2}
 body.dark .focus-number{background:#3d3428;color:#f0c58c}
 body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.dark .attention-item.danger{background:#3c2b2b;border-color:#684141}body.dark .attention-item.info{background:#302d42;border-color:#51496e}
+
+/* Desktop app shell: keep navigation stationary while the workspace scrolls */
+@media(min-width:651px){
+  html,body{height:100%;min-height:100%;overflow:hidden}
+  .app-shell{height:100vh;min-height:0;overflow:hidden;align-items:stretch}
+  .sidebar{position:sticky;top:0;align-self:flex-start;height:100vh;max-height:100vh;overflow-y:auto;overscroll-behavior:contain;flex:none}
+  .main-content{height:100vh;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+}
