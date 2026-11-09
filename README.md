@@ -443,3 +443,15 @@ Added a Learner Settings page covering profile, learning preferences, notificati
 - Community comments now load the latest 500 entries and display them in chronological order.
 - A user cannot create a redundant copy of their own published card. Copying another member's card creates an independent resource and carries over only the explicitly public community description.
 - This is an incremental UX hardening pass; production promotion remains separate and requires user testing and explicit approval.
+
+
+## Launch readiness — invitations, mentor consent, and account removal
+
+- New account creation is invite-gated by a database trigger. The login and magic-link flows do not auto-create accounts; an administrator issues invitations from User access.
+- Admin role and access-status changes are performed by the authenticated `learnflow-admin` Edge Function. Browser users cannot update protected profile columns.
+- Admins can permanently remove a member. The action requires an explicit confirmation, cannot delete the current or last active administrator, removes that member's learning data, Community content and interactions, activity/audit records, preferences, invitations, and mentor relationships, then deletes the Supabase Auth identity.
+- Account removal is implemented as a guarded database purge followed by Auth deletion. If Auth deletion fails after the purge, the profile remains suspended so an administrator can retry.
+- Mentorship supports admin offers and learner requests. Mentors must accept, then learners explicitly choose which categories to share. Learners can revoke access.
+- Mentor workspace data is returned through a server-side endpoint with field allowlists. Private resource notes, activity notes, goal descriptions, and sprint retrospectives are not returned to mentors. Mentor reads are not granted directly on learner tables.
+- Initial mentor-sharing categories: learning resources, goals, skills, sprints, and learning activity.
+- The first launch remains personal-learning focused; mentor feedback UI, advanced analytics sharing, and institutional workflows are future enhancements.
