@@ -1146,6 +1146,46 @@ function logActivity(id){const initialId=id??resources[0]?.id;if(!resources.leng
 
 function bindEvents(){
   attachAuditClickTracker();
+  document.getElementById('admin-invite-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Sending…'}
+    try{
+      const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'invite',email:String(f.get('email')||'').trim(),role:String(f.get('role')||'learner')}});
+      if(error||data?.error)throw new Error(data?.error||error?.message||'Invitation failed');
+      toast(data?.message||'Invitation sent');e.target.reset();await loadProfiles();render();
+    }catch(error){console.error('Invitation failed:',error);toast('Invitation failed: '+(error.message||'Unknown error'))}
+    finally{if(button){button.disabled=false;button.textContent='Send invitation'}}
+  });
+  document.getElementById('admin-mentor-assign-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();const f=new FormData(e.target);
+    try{
+      const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'assign',mentorId:f.get('mentorId'),learnerId:f.get('learnerId')}});
+      if(error||data?.error)throw new Error(data?.error||error?.message||'Mentor assignment failed');
+      toast(data?.message||'Mentor offer sent');e.target.reset();
+    }catch(error){console.error('Mentor assignment failed:',error);toast('Could not assign mentor: '+(error.message||'Unknown error'))}
+  });
+  document.querySelectorAll('[data-delete-user]').forEach(b=>b.addEventListener('click',async()=>{
+    const targetId=b.dataset.deleteUser,label=b.dataset.userEmail||targetId;
+    if(!targetId){toast('Could not identify the selected user');return}
+    if(!confirm('Permanently delete '+label+' and all associated LearnFlow data? This cannot be undone.'))return;
+    const typed=prompt('Type DELETE to confirm permanent removal of this account and its data.');
+    if(typed!=='DELETE'){toast('Deletion cancelled');return}
+    const originalText=b.textContent;b.disabled=true;b.textContent='Deleting…';
+    try{
+      const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'delete_user',userId:targetId}});
+      if(error||data?.error)throw new Error(data?.error||error?.message||'Deletion failed');
+      toast(data?.message||'User and data deleted');
+      await Promise.all([loadProfiles(),loadDeletionRequests()]);
+      render();
+    }catch(error){
+      console.error('Admin user deletion failed:',error);
+      toast('Could not delete user: '+(error.message||'Unknown error'));
+      b.disabled=false;b.textContent=originalText;
+    }
+  }));
+
   document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
   document.getElementById('settings-signout')?.addEventListener('click',()=>authAction());
   document.getElementById('settings-delete-request')?.addEventListener('click',requestAccountDeletion);
