@@ -10,7 +10,7 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
-const allowedPermissions = new Set(["resources", "goals", "skills", "sprints", "activities", "analytics"]);
+const allowedPermissions = new Set(["resources", "goals", "skills", "sprints", "activities"]);
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -139,6 +139,57 @@ Deno.serve(async (req: Request) => {
         .eq("role", "mentor").eq("access_status", "active").order("display_name");
       if (error) throw error;
       return json({ mentors: data || [] });
+    }
+
+    if (action === "mentor_workspace") {
+      if (actor.role !== "mentor") return json({ error: "Active mentors only" }, 403);
+      const relationshipId = String(body.relationshipId || "");
+      const { data: rel, error: relError } = await admin.from("mentor_relationships")
+        .select("id,mentor_id,learner_id,status,learner_consent_at")
+        .eq("id", relationshipId).single();
+      if (relError) throw relError;
+      if (rel.mentor_id !== actorId || rel.status !== "active" || !rel.learner_consent_at) {
+        return json({ error: "No active learner consent for this relationship" }, 403);
+      }
+      const { data: permissionRows, error: permissionError } = await admin.from("mentor_relationship_permissions")
+        .select("permission_key").eq("relationship_id", relationshipId);
+      if (permissionError) throw permissionError;
+      const permissions = new Set((permissionRows || []).map((p: {permission_key:string}) => p.permission_key));
+      const learnerId = rel.learner_id;
+      const result: Record<string, unknown[]> = { resources: [], goals: [], skills: [], sprints: [], activities: [] };
+      if (permissions.has("resources")) {
+        const { data, error } = await admin.from("resources")
+          .select("id,title,type,provider,status,progress,priority,due_date,estimated_hours")
+          .eq("user_id", learnerId).order("created_at", { ascending: false }).limit(100);
+        if (error) throw error;
+        result.resources = data || [];
+      }
+      if (permissions.has("goals")) {
+        const { data, error } = await admin.from("goals")
+          .select("id,title,priority,status").eq("user_id", learnerId).order("created_at", { ascending: true });
+        if (error) throw error;
+        result.goals = data || [];
+      }
+      if (permissions.has("skills")) {
+        const { data, error } = await admin.from("skills")
+          .select("id,title").eq("user_id", learnerId).order("created_at", { ascending: true });
+        if (error) throw error;
+        result.skills = data || [];
+      }
+      if (permissions.has("sprints")) {
+        const { data, error } = await admin.from("sprints")
+          .select("id,title,start_date,end_date,status").eq("user_id", learnerId).order("start_date", { ascending: false });
+        if (error) throw error;
+        result.sprints = data || [];
+      }
+      if (permissions.has("activities")) {
+        const { data, error } = await admin.from("activities")
+          .select("id,resource_id,activity_type,duration_minutes,occurred_at")
+          .eq("user_id", learnerId).order("occurred_at", { ascending: false }).limit(200);
+        if (error) throw error;
+        result.activities = data || [];
+      }
+      return json({ workspace: result, permissions: [...permissions] });
     }
 
     if (action === "list_relationships") {
