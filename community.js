@@ -42,14 +42,15 @@ function communityCanFollow(){
 function communityOwnerCard(p){
   const date=new Date(p.created_at);
   return `<article class="community-card">
-    <div class="community-meta"><span>${esc(p.type)} · ${esc(p.provider)}</span><span>${date.toLocaleDateString()}</span></div>
+    <div class="community-card-top"><span class="community-category"><i>✦</i> ${esc(p.type||'Resource')}</span><span class="community-date">${date.toLocaleDateString()}</span></div>
     <h3>${esc(p.title)}</h3>
+    <div class="community-provider">${esc(p.provider||'Independent learning')}</div>
     <div class="community-author"><span class="avatar avatar-blue">${esc((p.owner_name||'L').trim().charAt(0).toUpperCase())}</span><span><strong>${esc(p.owner_name||'LearnFlow member')}</strong> · ${esc((p.owner_role||'learner').charAt(0).toUpperCase()+(p.owner_role||'learner').slice(1))}</span></div>
     ${p.goal?`<p><strong>Learning goal:</strong> ${esc(p.goal)}</p>`:''}
     ${p.description?`<p>${esc(p.description)}</p>`:''}
     ${communitySafeUrl(p.url)?`<p><a href="${esc(communitySafeUrl(p.url))}" target="_blank" rel="noopener noreferrer">Open learning resource ↗</a></p>`:''}
     <div class="tag-row">${(p.skills||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
-    <div class="community-count">${communityCounts(p.id,'like')} likes · ${communityComments.filter(c=>c.publication_id===p.id).length} comments · ${communityCounts(p.id,'bookmark')} saves</div>
+    <div class="community-card-stats"><span>♥ ${communityCounts(p.id,'like')} appreciations</span><span>◌ ${communityComments.filter(c=>c.publication_id===p.id).length} conversations</span><span>☆ ${communityCounts(p.id,'bookmark')} saves</span></div>
     <div class="community-actions">
       <button class="community-action ${communityInteraction(p.id,'like')?'active':''}" data-community-action="like" data-id="${p.id}">♥ ${communityInteraction(p.id,'like')?'Liked':'Like'} · ${communityCounts(p.id,'like')}</button>
       <button class="community-action ${communityInteraction(p.id,'bookmark')?'active':''}" data-community-action="bookmark" data-id="${p.id}">${communityInteraction(p.id,'bookmark')?'★ Saved':'☆ Save'}</button>
@@ -68,9 +69,9 @@ function renderCommunityBoard(){
   if(communityTab==='my-shares')list=list.filter(p=>p.owner_id===user.id);
   if(communitySearch)list=list.filter(p=>[p.title,p.provider,p.goal,p.description,...(p.skills||[])].join(' ').toLowerCase().includes(communitySearch.toLowerCase()));
   const tabs=[['discover','Discover'],...(communityCanFollow()?[['following','Following']]:[]),['bookmarks','Saved'],['my-shares','My shares']];
-  return `<div class="community-page"><header class="community-header"><div><div class="community-kicker">LEARN TOGETHER</div><h1>Community</h1><p>Explore what people are learning. Share useful resources and exchange ideas.</p></div><div class="community-total"><strong>${communityPublications.length}</strong><span>shared resources</span></div></header>
+  return `<div class="community-page"><header class="community-header"><div class="community-hero-copy"><div class="community-kicker"><span class="community-kicker-dot"></span> THE LEARNING COLLECTIVE</div><h1>Good ideas <em>grow</em> when shared.</h1><p>Discover what curious minds are exploring, trade perspectives, and turn inspiration into progress.</p><div class="community-hero-tags"><span>✦ Discover</span><span>↗ Exchange</span><span>◎ Grow together</span></div></div><div class="community-total"><div class="community-total-orbit"><span>✳</span></div><strong>${communityPublications.length}</strong><span>shared resources</span><small>and counting</small></div></header>
     <section class="community-controls"><nav class="community-tabs" aria-label="Community views">${tabs.map(([key,label])=>`<button class="community-tab ${communityTab===key?'active':''}" data-community-tab="${key}">${label}</button>`).join('')}</nav><label class="community-search"><span>⌕</span><input id="community-search" placeholder="Search topics, skills or people…" value="${esc(communitySearch)}"></label></section>
-    <div class="community-feed-heading"><strong>${communityTab==='discover'?'Explore shared learning':communityTab==='my-shares'?'Your shared learning':communityTab==='bookmarks'?'Saved resources':'Resources you follow'}</strong><span>${list.length} ${list.length===1?'resource':'resources'}</span></div>
+    <div class="community-feed-heading"><div><span class="community-section-kicker">THE COMMUNITY BOARD</span><strong>${communityTab==='discover'?'Ideas worth exploring':communityTab==='my-shares'?'Your shared learning':communityTab==='bookmarks'?'Your inspiration shelf':'Your learning circle'}</strong></div><span class="community-result-count">${list.length} ${list.length===1?'resource':'resources'}</span></div>
     ${list.length?`<div class="community-grid">${list.map(communityOwnerCard).join('')}</div>`:`<div class="community-empty"><div class="community-empty-icon">◎</div><strong>${communityTab==='my-shares'?'You haven’t shared a resource yet':communityTab==='following'?'You’re not following any resources':communityTab==='bookmarks'?'No saved resources yet':'Nothing shared here yet'}</strong><p>${communityTab==='discover'?'When someone shares a learning resource, it will appear here. You can also publish one from your Learning Board.':'Explore Discover to find more learning resources.'}</p></div>`}
   </div>`;
 }
