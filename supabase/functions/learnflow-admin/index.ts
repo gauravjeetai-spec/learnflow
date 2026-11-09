@@ -110,58 +110,25 @@ Deno.serve(async (req: Request) => {
       requireAdmin();
       const targetId = String(body.userId || "");
       if (!targetId || targetId === actorId) return json({ error: "You cannot delete your own administrator account" }, 400);
-      const target = await getProfile(targetId);
-      if (target.role === "admin" && target.access_status === "active") {
-        const { count, error } = await admin.from("profiles").select("user_id", { count: "exact", head: true })
-          .eq("role", "admin").eq("access_status", "active");
-        if (error) throw error;
-        if ((count || 0) <= 1) return json({ error: "The last active administrator cannot be deleted" }, 409);
-      }
-      const { data: resources, error: resourcesError } = await admin.from("resources").select("id").eq("user_id", targetId);
-      if (resourcesError) throw resourcesError;
-      const resourceIds = (resources || []).map((r: {id:string}) => r.id);
-
-      const operations = [
-        admin.from("community_comments").delete().eq("user_id", targetId),
-        admin.from("community_interactions").delete().eq("user_id", targetId),
-        admin.from("community_publications").delete().eq("owner_id", targetId),
-        admin.from("activities").delete().eq("user_id", targetId),
-        admin.from("audit_events").delete().eq("user_id", targetId),
-        admin.from("account_deletion_requests").delete().eq("user_id", targetId),
-        admin.from("user_preferences").delete().eq("user_id", targetId),
-        admin.from("mentor_relationships").delete().or(`mentor_id.eq.${targetId},learner_id.eq.${targetId}`),
-        admin.from("goals").delete().eq("user_id", targetId),
-        admin.from("skills").delete().eq("user_id", targetId),
-        admin.from("sprints").delete().eq("user_id", targetId),
-      ];
-      if (resourceIds.length) {
-        operations.push(admin.from("activities").delete().in("resource_id", resourceIds));
-        operations.push(admin.from("resources").delete().in("id", resourceIds));
-      }
-      const results = await Promise.all(operations);
-      const failed = results.find((r: {error:unknown}) => r.error);
-      if (failed?.error) throw failed.error;
-
-      // Remove references to the deleted member from comments written by others.
-      const { data: mentions, error: mentionError } = await admin.from("community_comments")
-        .select("id,mentioned_user_ids").contains("mentioned_user_ids", [targetId]);
-      if (mentionError) throw mentionError;
-      for (const comment of mentions || []) {
-        const remaining = (comment.mentioned_user_ids || []).filter((id: string) => id !== targetId);
-        const { error } = await admin.from("community_comments").update({ mentioned_user_ids: remaining }).eq("id", comment.id);
-        if (error) throw error;
-      }
-
-      const { error: invitationError } = await admin.from("invitations").delete().or(`auth_user_id.eq.${targetId},invited_by.eq.${targetId}`);
-      if (invitationError) throw invitationError;
-      const { error: profileDeleteError } = await admin.from("profiles").delete().eq("user_id", targetId);
-      if (profileDeleteError) throw profileDeleteError;
+      const { data: purgeResult, error: purgeError } = await admin.rpc("admin_purge_user_data", {
+        p_actor_id: actorId,
+        p_target_id: targetId
+      });
+      if (purgeError) throw purgeError;
       const { error: authDeleteError } = await admin.auth.admin.deleteUser(targetId);
       if (authDeleteError) throw authDeleteError;
-
+      // Explicit cleanup also covers projects where profiles.user_id is not cascading.
+      const { error: profileDeleteError } = await admin.from("profiles").delete().eq("user_id", targetId);
+      if (profileDeleteError) throw profileDeleteError;
       await admin.from("audit_events").insert({
-        user_id: actorId, action: "admin_deleted_user", target_type: "user", target_id: targetId,
-        metadata: { deleted_role: target.role, deleted_display_name: target.display_name || null }
+        user_id: actorId,
+        action: "admin_deleted_user",
+        target_type: "user",
+        target_id: targetId,
+        metadata: {
+          deleted_role: purgeResult?.deleted_role || null,
+          deleted_display_name: purgeResult?.deleted_display_name || null
+        }
       });
       return json({ success: true, message: "User and associated LearnFlow data permanently deleted" });
     }
