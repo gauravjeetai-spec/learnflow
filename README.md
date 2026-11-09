@@ -1,3 +1,8 @@
+### Activity actor attribution — 2026-11-09
+- Activity history displays the actor's profile display name (or a safe fallback) alongside each audit event and learning session.
+- Admins see names for workspace members using the already-loaded active profile directory; non-admin users see their own profile identity under existing row-level security.
+- No schema or permission changes are required; actor identity uses the existing `audit_events.user_id` and learning activity ownership fields.
+
 ### Learning Board controls — 2026-11-09
 - List/Board toggle switches between the Kanban lanes and the resource-library table.
 - Sort menu supports default order, recently updated, title, due date, priority and progress.
