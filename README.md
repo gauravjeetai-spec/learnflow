@@ -1,3 +1,10 @@
+### Learning Board controls — 2026-11-09
+- List/Board toggle switches between the Kanban lanes and the resource-library table.
+- Sort menu supports default order, recently updated, title, due date, priority and progress.
+- Global search (top-bar button or Cmd/Ctrl + K) searches resources, goals, skills and sprints, with direct navigation to matching records or sections.
+- Optional two-card lane layout displays cards in two columns only for lanes containing more than four cards; other lanes keep their standard single-card width. The board remains horizontally scrollable to preserve readable card dimensions.
+- Existing drag-and-drop, filters, resource editing, sharing and Supabase data model are retained.
+
 # LearnFlow
 
 LearnFlow is a focused learning operating system for turning goals into skills, resources, sprints, activity, and measurable progress.
