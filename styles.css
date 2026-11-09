@@ -400,3 +400,40 @@ body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.d
  .course-card .card-footer,.course-card .due,.course-card .owner-name{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.course-card:hover{transform:none}}
+
+
+/* Goals & Skills refresh — warmer, clearer cards with a restrained multi-colour system. */
+.goal-grid,.skill-grid{gap:18px;align-items:stretch}
+.goal-card,.skill-card{
+  --card-accent:#4778d8;--card-soft:#edf3ff;--card-border:#d7e3fb;
+  position:relative;overflow:hidden;min-height:unset;padding:23px 23px 20px 25px;
+  border:1px solid var(--card-border);border-radius:16px;
+  background:linear-gradient(135deg,var(--card-soft) 0%,var(--surface) 44%);
+  box-shadow:0 3px 12px rgba(31,48,75,.035);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.goal-card:before,.skill-card:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--card-accent)}
+.goal-card:nth-child(6n+2),.skill-card:nth-child(6n+2){--card-accent:#29977f;--card-soft:#eaf6f1;--card-border:#cde8dc}
+.goal-card:nth-child(6n+3),.skill-card:nth-child(6n+3){--card-accent:#bd8740;--card-soft:#fbf2e5;--card-border:#efdfc5}
+.goal-card:nth-child(6n+4),.skill-card:nth-child(6n+4){--card-accent:#876bc5;--card-soft:#f2effb;--card-border:#e1d9f3}
+.goal-card:nth-child(6n+5),.skill-card:nth-child(6n+5){--card-accent:#cf7182;--card-soft:#fbf0f2;--card-border:#f0d8de}
+.goal-card:nth-child(6n),.skill-card:nth-child(6n){--card-accent:#3d91a6;--card-soft:#eaf5f7;--card-border:#d1e8ec}
+.goal-card:hover,.skill-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(31,48,75,.09);border-color:var(--card-accent)}
+.goal-top{gap:14px;align-items:center}
+.goal-top h3,.skill-card h3{font-family:'Space Grotesk';font-size:17px;line-height:1.4;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.goal-card p,.skill-card p{font-size:13px;line-height:1.65;color:var(--muted);margin:10px 0 20px;max-width:58ch}
+.goal-card .progress-row,.skill-card .progress-row{font-size:12px;font-weight:600;margin-bottom:8px}
+.goal-card .progress-row b,.skill-card .progress-row b{font-size:13px;font-weight:700;color:var(--text)}
+.goal-card .progress-track,.skill-card .progress-track{height:8px;border-radius:99px;background:#e8edf3;overflow:hidden}
+.goal-card .progress-fill,.skill-card .progress-fill{height:100%;border-radius:99px;background:var(--card-accent)}
+.goal-card .meta-line,.skill-card .meta-line{font-size:11px;line-height:1.5;color:var(--muted);margin-top:13px;gap:8px;flex-wrap:wrap}
+.priority-label{font-size:10px;font-weight:700;letter-spacing:.02em;padding:5px 9px;border-radius:999px;background:var(--card-soft);color:var(--card-accent);border:1px solid var(--card-border);white-space:nowrap}
+.skill-card .skill-icon{height:42px;width:42px;border-radius:12px;display:grid;place-items:center;background:var(--card-soft);color:var(--card-accent);border:1px solid var(--card-border);margin-bottom:17px;font-size:20px;font-weight:700}
+.goal-card .settings-actions,.skill-card .settings-actions{display:flex;gap:9px;margin-top:17px!important}
+.goal-card .settings-actions button,.skill-card .settings-actions button{min-height:38px;padding:0 15px;border-radius:9px;font-size:12px;font-weight:650}
+.goal-card .settings-actions .secondary-button,.skill-card .settings-actions .secondary-button{border-color:var(--card-border);background:rgba(255,255,255,.72)}
+.goal-card .settings-actions .danger-button,.skill-card .settings-actions .danger-button{background:rgba(255,255,255,.72)}
+@media(max-width:760px){.goal-grid,.skill-grid{grid-template-columns:1fr;gap:13px}.goal-card,.skill-card{padding:19px 18px 17px 21px}.goal-top h3,.skill-card h3{font-size:16px}.goal-card p,.skill-card p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.goal-card,.skill-card{transition:none}.goal-card:hover,.skill-card:hover{transform:none}}
+body.dark .goal-card,body.dark .skill-card{background:linear-gradient(135deg,color-mix(in srgb,var(--card-accent) 13%,var(--surface)) 0%,var(--surface) 58%);border-color:color-mix(in srgb,var(--card-accent) 35%,var(--border))}
+body.dark .goal-card .progress-track,body.dark .skill-card .progress-track{background:#303b4b}
