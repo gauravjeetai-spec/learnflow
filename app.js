@@ -15,22 +15,13 @@ const demoResources = [
 ];
 const columns=[['backlog','BACKLOG'],['planned','PLANNED'],['in-progress','IN PROGRESS'],['practice','PRACTICE / REVIEW'],['completed','COMPLETED']];
 const demoGoals=[
-  {id:'demo-goal-1',title:'Build Business Acumen',description:'Become a stronger, more confident operator.',priority:'High',status:'active'},
-  {id:'demo-goal-2',title:'Become Better at AI',description:'Build practical fluency in modern AI systems.',priority:'High',status:'active'},
-  {id:'demo-goal-3',title:'Improve Leadership',description:'Lead with clarity, empathy, and conviction.',priority:'Medium',status:'active'},
-  {id:'demo-goal-4',title:'Master Marketing',description:'Understand how great products find their people.',priority:'Medium',status:'active'}
+  {id:'demo-goal-1',title:'Build a learning habit',description:'Create a consistent routine for focused learning.',priority:'High',status:'active'}
 ];
 const demoSkills=[
-  {id:'demo-skill-1',title:'Financial Modeling',description:'Build and interpret models to make better decisions.'},
-  {id:'demo-skill-2',title:'AI Engineering',description:'Design useful systems with modern AI primitives.'},
-  {id:'demo-skill-3',title:'Business Strategy',description:'See the system, find the leverage, make the call.'},
-  {id:'demo-skill-4',title:'Leadership',description:'Create clarity and momentum for other people.'},
-  {id:'demo-skill-5',title:'Marketing',description:'Turn customer insight into meaningful growth.'},
-  {id:'demo-skill-6',title:'Sales',description:'Build trust and move from interest to action.'}
+  {id:'demo-skill-1',title:'Clear Communication',description:'Practice expressing ideas clearly and confidently.'}
 ];
 const demoSprints=[
-  {id:'demo-sprint-1',title:'Build the foundation',start_date:'2026-09-21',end_date:'2026-09-27',status:'active'},
-  {id:'demo-sprint-2',title:'AI practice week',start_date:'2026-09-28',end_date:'2026-10-04',status:'planned'}
+  {id:'demo-sprint-1',title:'My first learning sprint',start_date:'2026-11-09',end_date:'2026-11-15',status:'active'}
 ];
 const demoActivities=[
   {id:'demo-activity-1',resource_id:1,activity_type:'Study',duration_minutes:60,notes:'Worked through financial modeling fundamentals.',occurred_at:'2026-09-20T09:30:00+05:30'},
@@ -210,20 +201,35 @@ async function loadWorkspaceData(){
   for(const result of [g,s,sp,a])if(result.error){console.error(result.error);toast('Could not load all learning workspace data');}
   goalsData=g.data||[];skillsData=s.data||[];sprintsData=sp.data||[];activitiesData=a.data||[];
   syncResourceActivities();
-  if(!goalsData.length&&!skillsData.length&&!sprintsData.length)await seedWorkspaceData();
+  if(!goalsData.length||!skillsData.length||!sprintsData.length)await seedWorkspaceData();
 }
 async function seedWorkspaceData(){
   if(!user||!supa||profile?.role==='admin')return;
-  const goalTitles=[['Build Business Acumen','Become a stronger, more confident operator.','High'],['Become Better at AI','Build practical fluency in modern AI systems.','High'],['Improve Leadership','Lead with clarity, empathy, and conviction.','Medium'],['Master Marketing','Understand how great products find their people.','Medium']];
-  const skillTitles=[['Financial Modeling','Build and interpret models to make better decisions.'],['AI Engineering','Design useful systems with modern AI primitives.'],['Business Strategy','See the system, find the leverage, make the call.'],['Leadership','Create clarity and momentum for other people.'],['Marketing','Turn customer insight into meaningful growth.'],['Sales','Build trust and move from interest to action.']];
   const today=new Date();const end=new Date(today);end.setDate(end.getDate()+6);
-  const [g,s,sp]=await Promise.all([
-    supa.from('goals').insert(goalTitles.map(x=>({title:x[0],description:x[1],priority:x[2]}))).select(),
-    supa.from('skills').insert(skillTitles.map(x=>({title:x[0],description:x[1]}))).select(),
-    supa.from('sprints').insert({title:'Build the foundation',start_date:today.toISOString().slice(0,10),end_date:end.toISOString().slice(0,10),status:'active'}).select().single()
-  ]);
-  if(g.error||s.error||sp.error){console.error(g.error||s.error||sp.error);return}
-  goalsData=g.data||[];skillsData=s.data||[];sprintsData=[sp.data];
+  const inserts=[];
+  if(!goalsData.length)inserts.push(supa.from('goals').insert({
+    title:'Build a learning habit',
+    description:'Create a consistent routine for focused learning.',
+    priority:'High'
+  }).select().single().then(result=>({kind:'goal',...result})));
+  if(!skillsData.length)inserts.push(supa.from('skills').insert({
+    title:'Clear Communication',
+    description:'Practice expressing ideas clearly and confidently.'
+  }).select().single().then(result=>({kind:'skill',...result})));
+  if(!sprintsData.length)inserts.push(supa.from('sprints').insert({
+    title:'My first learning sprint',
+    start_date:today.toISOString().slice(0,10),
+    end_date:end.toISOString().slice(0,10),
+    status:'active'
+  }).select().single().then(result=>({kind:'sprint',...result})));
+  if(!inserts.length)return;
+  const results=await Promise.all(inserts);
+  for(const result of results){
+    if(result.error){console.error('Could not create starter '+result.kind+':',result.error);toast('Could not create your starter '+result.kind);continue}
+    if(result.kind==='goal')goalsData=[result.data];
+    if(result.kind==='skill')skillsData=[result.data];
+    if(result.kind==='sprint')sprintsData=[result.data];
+  }
 }
 async function createGoal(payload){const {data,error}=await supa.from('goals').insert(payload).select().single();if(error){toast('Could not create goal: '+error.message);return null}goalsData.push(data);await trackAudit('goal_created','goal',data.id,{title:data.title});toast('Goal created');render();return data}
 async function createSkill(payload){const {data,error}=await supa.from('skills').insert(payload).select().single();if(error){toast('Could not add skill: '+error.message);return null}skillsData.push(data);await trackAudit('skill_created','skill',data.id,{title:data.title});toast('Skill added');render();return data}
