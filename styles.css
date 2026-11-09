@@ -340,3 +340,23 @@ body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.d
 
 /* Two-up mode uses a horizontal lane rail so cards retain readable widths. */
 .board-columns.board-two-up{display:flex;overflow-x:auto;align-items:start;gap:14px;overscroll-behavior-x:contain}
+
+
+/* Resource visibility states: blue remains the product identity; teal = shared, warm amber = private. */
+.course-card{position:relative;overflow:hidden;transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+.course-card.is-private-card{border-color:#e8d6b7;background:linear-gradient(145deg,rgba(250,239,220,.30),var(--surface) 48%)}
+.course-card.is-community-card{border-color:#b8ded5;background:linear-gradient(145deg,rgba(220,243,237,.42),var(--surface) 48%)}
+.course-card.is-private-card:before,.course-card.is-community-card:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;pointer-events:none}
+.course-card.is-private-card:before{background:#c58b43}
+.course-card.is-community-card:before{background:#29977f}
+.visibility-badge{display:inline-flex;align-items:center;gap:4px;margin-left:auto;margin-right:7px;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.visibility-badge.private{color:#94601f;background:#f8ecd8;border:1px solid #ecd7b5}
+.visibility-badge.community{color:#18745f;background:#e0f2ec;border:1px solid #bfe2d7}
+.card-top{display:flex;align-items:center;gap:6px}
+.card-top .priority-dot{flex:0 0 auto}
+.data-table tr.is-private-row td:first-child{box-shadow:inset 3px 0 #c58b43}
+.data-table tr.is-community-row td:first-child{box-shadow:inset 3px 0 #29977f}
+.visibility-inline{font-weight:700}
+.visibility-inline.private{color:#94601f}
+.visibility-inline.community{color:#18745f}
+@media(prefers-reduced-motion:reduce){.course-card{transition:none}}
