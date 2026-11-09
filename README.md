@@ -455,3 +455,13 @@ Added a Learner Settings page covering profile, learning preferences, notificati
 - Mentor workspace data is returned through a server-side endpoint with field allowlists. Private resource notes, activity notes, goal descriptions, and sprint retrospectives are not returned to mentors. Mentor reads are not granted directly on learner tables.
 - Initial mentor-sharing categories: learning resources, goals, skills, sprints, and learning activity.
 - The first launch remains personal-learning focused; mentor feedback UI, advanced analytics sharing, and institutional workflows are future enhancements.
+
+
+## Self-service learner registration
+
+- The login page offers **Create an account** instead of the previous magic-link sign-in option.
+- Anyone can register with their name, email, and password. Email confirmation is required when enabled in Supabase Auth.
+- The database auth trigger creates every self-registered profile as `role='learner'`, `access_status='pending'`, and `name_setup_completed=false`.
+- New Learners cannot enter the workspace until an administrator approves their account.
+- Mentor and Admin roles cannot be selected during public registration; only an administrator can assign those roles.
+- Existing administrator invitations remain available for inviting Learners and Mentors.
