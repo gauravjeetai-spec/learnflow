@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
     if (!token) return json({ error: "Authentication required" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!serviceKey) return json({ error: "Server admin key is not configured" }, 500);
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
