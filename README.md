@@ -1,3 +1,7 @@
+### Resource visibility styling — 2026-11-09
+- Private learning resources use a warm amber/gold badge and left-edge accent; community-published resources use a teal/green badge and accent, preserving LearnFlow blue for primary actions.
+- The distinction appears on Learning Board cards and in List view, including resources published by other workspace members.
+
 ### Activity actor attribution — 2026-11-09
 - Activity history displays the actor's profile display name (or a safe fallback) alongside each audit event and learning session.
 - Admins see names for workspace members using the already-loaded active profile directory; non-admin users see their own profile identity under existing row-level security.
