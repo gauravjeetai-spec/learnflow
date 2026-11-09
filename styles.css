@@ -337,3 +337,6 @@ body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.d
 
 /* Keep the resource table as the dedicated List view; Kanban remains uncluttered. */
 .board-library-panel:not(.list-view-active){display:none}
+
+/* Two-up mode uses a horizontal lane rail so cards retain readable widths. */
+.board-columns.board-two-up{display:flex;overflow-x:auto;align-items:start;gap:14px;overscroll-behavior-x:contain}
