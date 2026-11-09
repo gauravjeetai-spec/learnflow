@@ -89,13 +89,9 @@ async function loadProfiles(){
 }
 async function updateAccess(userId, role, accessStatus){
   if(!supa||profile?.role!=='admin'||profile?.access_status!=='active')return false;
-  const payload={role,access_status:accessStatus,approved_at:accessStatus==='active'?new Date().toISOString():null,approved_by:accessStatus==='active'?user.id:null};
-  const {error}=await supa.from('profiles').update(payload).eq('user_id',userId);
-  if(error){console.error(error);toast('Could not update user access: '+error.message);return false}
-  await loadProfiles();
-  toast('User access updated');
-  render();
-  return true;
+  const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'update_access',userId,role,accessStatus}});
+  if(error||data?.error){console.error(error||data?.error);toast(data?.error||error?.message||'Could not update user access');return false}
+  await loadProfiles();toast(data?.message||'User access updated');render();return true;
 }
 async function loadDeletionRequests(){if(!supa||profile?.role!=='admin'||profile?.access_status!=='active'){deletionRequests=[];return}const {data,error}=await supa.from('account_deletion_requests').select('*').order('requested_at',{ascending:false});if(error){console.error(error);deletionRequests=[];return}deletionRequests=data||[]}
 async function loadPreferences(){
@@ -324,7 +320,7 @@ async function requestAccountDeletion(){if(!user||!supa)return;const {data:exist
   render();
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view==='community'?'Community':view[0].toUpperCase()+view.slice(1);render()}
+function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;if(view==='mentorship'&&(!user||profile?.access_status!=='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view==='community'?'Community':view[0].toUpperCase()+view.slice(1);render()}
 function resourceCard(r){
   const canShare=!!user&&String(r.user_id||user.id)===String(user.id);
   const shared=window.communityIsPublished?.(r.id);
@@ -416,12 +412,46 @@ function admin(){
     <td><span class="status-pill ${p.access_status==='active'?'done':p.access_status==='pending'?'practice':''}">${esc(p.access_status)}</span></td>
     <td><select data-role-user="${p.user_id}" ${p.user_id===user?.id?'disabled':''}><option value="learner" ${p.role==='learner'?'selected':''}>Learner</option><option value="mentor" ${p.role==='mentor'?'selected':''}>Mentor</option><option value="admin" ${p.role==='admin'?'selected':''}>Admin</option></select></td>
     <td><select data-access-user="${p.user_id}" ${p.user_id===user?.id?'disabled':''}><option value="pending" ${p.access_status==='pending'?'selected':''}>Pending</option><option value="active" ${p.access_status==='active'?'selected':''}>Active</option><option value="suspended" ${p.access_status==='suspended'?'selected':''}>Suspended</option><option value="rejected" ${p.access_status==='rejected'?'selected':''}>Rejected</option></select></td>
-    <td>${p.user_id===user?.id?'<span class="stat-meta">You</span>':`<button class="secondary-button" style="padding:6px 9px" data-approve-user="${p.user_id}">${p.access_status==='active'?'Update':'Approve'}</button>`}</td>
+    <td>${p.user_id===user?.id?'<span class="stat-meta">You</span>':`<button class="secondary-button" style="padding:6px 9px" data-approve-user="${p.user_id}">${p.access_status==='active'?'Update':'Approve'}</button> <button class="danger-button" style="padding:6px 9px" data-delete-user="${p.user_id}" data-user-email="${esc(p.display_name||p.user_id)}">Delete</button>`}</td>
   </tr>`).join('');
   const requests=deletionRequests.filter(x=>x.status==='pending');
-  return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Workspace administration</div><h1>User access</h1><p>Approve users, assign roles, and review account deletion requests.</p></div></div><section class="panel list-panel"><div class="table-toolbar"><strong>${profiles.length} users</strong><span class="stat-meta">Access is enforced by Supabase RLS</span></div><table class="data-table"><thead><tr><th>User</th><th>Status</th><th>Role</th><th>Access</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No users yet.</td></tr>'}</tbody></table></section><section class="panel list-panel" style="margin-top:13px"><div class="table-toolbar"><strong>Account deletion requests</strong><span class="stat-meta">${requests.length} pending</span></div><table class="data-table"><thead><tr><th>User</th><th>Requested</th><th>Status</th></tr></thead><tbody>${requests.map(x=>{const p=profiles.find(y=>y.user_id===x.user_id);return `<tr><td><strong>${esc(p?.display_name||'Unnamed user')}</strong><span class="table-type">${esc(x.user_id)}</span></td><td>${new Date(x.requested_at).toLocaleString()}</td><td><span class="status-pill practice">Pending review</span></td></tr>`}).join('')||'<tr><td colspan="3">No pending deletion requests.</td></tr>'}</tbody></table></section></div>`;
-
+  const mentors=profiles.filter(p=>p.role==='mentor'&&p.access_status==='active');
+  const learners=profiles.filter(p=>p.role==='learner'&&p.access_status==='active');
+  return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Workspace administration</div><h1>User access</h1><p>Invite members, manage roles, assign mentors and remove accounts.</p></div></div>
+  <section class="panel list-panel launch-admin-panel"><div class="panel-header"><div><h3>Invite a member</h3><p class="settings-copy">Only people invited by an administrator can create a LearnFlow account.</p></div></div><form id="admin-invite-form" class="launch-inline-form"><div class="field"><label>Email address</label><input name="email" type="email" required placeholder="person@example.com"></div><div class="field"><label>Role</label><select name="role"><option value="learner">Learner</option><option value="mentor">Mentor</option></select></div><button class="primary-button" type="submit">Send invitation</button></form></section>
+  <section class="panel list-panel launch-admin-panel"><div class="panel-header"><div><h3>Assign a mentor</h3><p class="settings-copy">The mentor must accept, and the learner must consent before any workspace data is visible.</p></div></div><form id="admin-mentor-assign-form" class="launch-inline-form"><div class="field"><label>Learner</label><select name="learnerId" required><option value="">Choose learner</option>${learners.map(p=>`<option value="${p.user_id}">${esc(p.display_name||p.user_id)}</option>`).join('')}</select></div><div class="field"><label>Mentor</label><select name="mentorId" required><option value="">Choose mentor</option>${mentors.map(p=>`<option value="${p.user_id}">${esc(p.display_name||p.user_id)}</option>`).join('')}</select></div><button class="primary-button" type="submit">Send offer</button></form></section>
+  <section class="panel list-panel"><div class="table-toolbar"><strong>${profiles.length} users</strong><span class="stat-meta">Role and access changes are handled securely on the server</span></div><table class="data-table"><thead><tr><th>User</th><th>Status</th><th>Role</th><th>Access</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No users yet.</td></tr>'}</tbody></table></section>
+  <section class="panel list-panel" style="margin-top:13px"><div class="table-toolbar"><strong>Account deletion requests</strong><span class="stat-meta">${requests.length} pending</span></div><table class="data-table"><thead><tr><th>User</th><th>Requested</th><th>Status</th><th>Action</th></tr></thead><tbody>${requests.map(x=>{const p=profiles.find(y=>y.user_id===x.user_id);return `<tr><td><strong>${esc(p?.display_name||'Unnamed user')}</strong><span class="table-type">${esc(x.user_id)}</span></td><td>${new Date(x.requested_at).toLocaleString()}</td><td><span class="status-pill practice">Pending review</span></td><td><button class="danger-button" style="padding:6px 9px" data-delete-user="${x.user_id}" data-user-email="${esc(p?.display_name||x.user_id)}">Delete account</button></td></tr>`}).join('')||'<tr><td colspan="4">No pending deletion requests.</td></tr>'}</tbody></table></section></div>`;
 }
+function mentorship(){
+  return `<div class="page"><div class="page-heading"><div><div class="eyebrow">Learning with guidance</div><h1>Mentorship</h1><p>Build a mentoring relationship with clear consent and control over what you share.</p></div></div><div id="mentorship-data"><section class="panel list-panel"><p class="settings-copy">Loading your mentoring relationships…</p></section></div></div>`;
+}
+async function renderMentorshipData(){
+  const host=document.getElementById('mentorship-data');
+  if(!host||!supa||!user||profile?.access_status!=='active')return;
+  const [relResult,mentorResult]=await Promise.all([
+    supa.functions.invoke('learnflow-admin',{body:{action:'list_relationships'}}),
+    profile?.role==='learner'?supa.functions.invoke('learnflow-admin',{body:{action:'list_mentors'}}):Promise.resolve({data:{mentors:[]},error:null})
+  ]);
+  if(!document.getElementById('mentorship-data'))return;
+  if(relResult.error||relResult.data?.error){host.innerHTML='<section class="panel list-panel"><p>Could not load mentoring relationships: '+esc(relResult.data?.error||relResult.error?.message||'Unknown error')+'</p></section>';return}
+  const rels=relResult.data?.relationships||[], mentors=mentorResult.data?.mentors||[];
+  const pendingForMentor=rels.filter(r=>r.mentor_id===user.id&&['requested','offered'].includes(r.status));
+  const awaitingConsent=rels.filter(r=>r.learner_id===user.id&&r.status==='accepted');
+  const active=rels.filter(r=>(r.mentor_id===user.id||r.learner_id===user.id)&&r.status==='active');
+  const mentorOptions=mentors.map(m=>'<option value="'+m.user_id+'">'+esc(m.display_name||'Mentor')+'</option>').join('');
+  const requestForm=profile?.role==='learner'?'<section class="panel list-panel"><div class="panel-header"><div><h3>Find a mentor</h3><p class="settings-copy">Send a request. Your information stays private until you approve access.</p></div></div><form id="mentor-request-form" class="launch-inline-form"><div class="field"><label>Available mentor</label><select name="mentorId" required><option value="">Choose a mentor</option>'+mentorOptions+'</select></div><button class="primary-button" type="submit" '+(!mentors.length?'disabled':'')+'>Request mentor</button></form></section>':'';
+  const pendingHtml=pendingForMentor.length?'<section class="panel list-panel"><h3>Mentoring requests</h3>'+pendingForMentor.map(r=>'<div class="mentor-rel-row"><div><strong>'+esc(r.learner?.display_name||'Learner')+'</strong><p class="settings-copy">'+(r.status==='offered'?'Admin proposed this mentoring relationship':'Learner requested your guidance')+'</p></div><div class="button-row"><button class="primary-button" data-mentor-response="'+r.id+'" data-accept="true">Accept</button><button class="secondary-button" data-mentor-response="'+r.id+'" data-accept="false">Decline</button></div></div>').join('')+'</section>':'';
+  const consentHtml=awaitingConsent.length?'<section class="panel list-panel"><h3>Review mentor access</h3><p class="settings-copy">Your mentor has accepted. Choose exactly what they may view before activating access.</p>'+awaitingConsent.map(r=>'<form class="mentor-consent-form" data-mentor-consent="'+r.id+'"><strong>'+esc(r.mentor?.display_name||'Mentor')+'</strong><div class="mentor-permission-grid">'+[['resources','Learning resources'],['goals','Goals'],['skills','Skills'],['sprints','Sprints'],['activities','Learning activity'],['analytics','Analytics']].map(([k,label])=>'<label><input type="checkbox" name="permission" value="'+k+'" '+(['resources','goals','skills','sprints','activities'].includes(k)?'checked':'')+'> '+label+'</label>').join('')+'</div><button class="primary-button" type="submit">Approve selected access</button></form>').join('')+'</section>':'';
+  const activeHtml=active.length?'<section class="panel list-panel"><h3>Active mentoring relationships</h3>'+active.map(r=>'<div class="mentor-rel-row"><div><strong>'+(r.learner_id===user.id?esc(r.mentor?.display_name||'Mentor'):'Learner: '+esc(r.learner?.display_name||'Learner'))+'</strong><p class="settings-copy">Access is active and controlled by learner consent.</p></div>'+(r.learner_id===user.id?'<button class="danger-button" data-mentor-revoke="'+r.id+'">Revoke access</button>':'<span class="status-pill done">Consented access</span>')+'</div>').join('')+'</section>':'';
+  const none=(!pendingForMentor.length&&!awaitingConsent.length&&!active.length)?'<section class="panel list-panel"><div class="empty-state"><strong>No mentoring relationships yet</strong><p>When a learner requests you or an administrator sends an offer, it will appear here.</p></div></section>':'';
+  host.innerHTML=requestForm+pendingHtml+consentHtml+activeHtml+none;
+  host.querySelector('#mentor-request-form')?.addEventListener('submit',async e=>{e.preventDefault();const mentorId=new FormData(e.target).get('mentorId');const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'request',mentorId}});toast(error?.message||data?.error||data?.message||'Request sent');await renderMentorshipData()});
+  host.querySelectorAll('[data-mentor-response]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'respond',relationshipId:b.dataset.mentorResponse,accept:b.dataset.accept==='true'}});toast(error?.message||data?.error||data?.message||'Updated');await renderMentorshipData()}));
+  host.querySelectorAll('[data-mentor-consent]').forEach(form=>form.addEventListener('submit',async e=>{e.preventDefault();const permissions=[...form.querySelectorAll('input[name="permission"]:checked')].map(x=>x.value);const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'consent',relationshipId:form.dataset.mentorConsent,permissions}});toast(error?.message||data?.error||data?.message||'Consent saved');await renderMentorshipData()}));
+  host.querySelectorAll('[data-mentor-revoke]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Revoke this mentor’s access to your learning information?'))return;const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'revoke',relationshipId:b.dataset.mentorRevoke}});toast(error?.message||data?.error||data?.message||'Access revoked');await renderMentorshipData()}));
+}
+
 function overview(){
   const now=new Date();
   const hour=now.getHours();
@@ -602,13 +632,14 @@ function animateHighlightNumbers(){
 }
 function render(){
   if(!root)return;
-  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,community:()=>window.renderCommunityBoard?window.renderCommunityBoard():'<div class="page"><div class="empty-state">Community board is loading…</div></div>',login:loginView,'name-setup':nameSetup};
+  const views={overview,board,goals,skills,sprints,courses,activity,analytics,admin,settings,mentorship,community:()=>window.renderCommunityBoard?window.renderCommunityBoard():'<div class="page"><div class="empty-state">Community board is loading…</div></div>',login:loginView,'name-setup':nameSetup};
   try{
     if(user&&profile&&profile.access_status!=='active'&&profile.role!=='admin'){
       root.innerHTML=accessGate();
     }else{
       const viewRenderer=views[currentView]||overview;
       root.innerHTML=viewRenderer();
+      if(currentView==='mentorship')renderMentorshipData();
     }
   }catch(error){
     console.error('LearnFlow view render failed:',error);
@@ -779,6 +810,27 @@ function attachAuditClickTracker(){
 }
 function bindEvents(){
   attachAuditClickTracker();
+  document.getElementById('admin-invite-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();const f=new FormData(e.target);const button=e.target.querySelector('button[type="submit"]');if(button){button.disabled=true;button.textContent='Sending…'}
+    const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'invite',email:String(f.get('email')||'').trim(),role:String(f.get('role')||'learner')}});
+    if(button){button.disabled=false;button.textContent='Send invitation'}
+    if(error||data?.error){toast(data?.error||error?.message||'Invitation failed');return}
+    toast(data?.message||'Invitation sent');e.target.reset();await loadProfiles();render();
+  });
+  document.getElementById('admin-mentor-assign-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();const f=new FormData(e.target);const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'assign',mentorId:f.get('mentorId'),learnerId:f.get('learnerId')}});
+    toast(error?.message||data?.error||data?.message||'Mentor offer sent');if(!error&&!data?.error)e.target.reset();
+  });
+  document.querySelectorAll('[data-delete-user]').forEach(b=>b.addEventListener('click',async()=>{
+    const targetId=b.dataset.deleteUser;const label=b.dataset.userEmail||targetId;
+    if(!confirm('Permanently delete '+label+' and all associated LearnFlow data? This cannot be undone.'))return;
+    const typed=prompt('Type DELETE to confirm permanent removal of this account and its data.');
+    if(typed!=='DELETE'){toast('Deletion cancelled');return}
+    b.disabled=true;b.textContent='Deleting…';
+    const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'delete_user',userId:targetId}});
+    if(error||data?.error){b.disabled=false;b.textContent='Delete';toast(data?.error||error?.message||'Could not delete account');return}
+    toast(data?.message||'User and data deleted');await loadProfiles();await loadDeletionRequests();render();
+  }));
   document.getElementById('refresh-access')?.addEventListener('click',refreshSessionState);
   document.getElementById('settings-signout')?.addEventListener('click',()=>authAction());
   document.getElementById('settings-delete-request')?.addEventListener('click',requestAccountDeletion);
@@ -817,7 +869,7 @@ function bindEvents(){
     if(button){button.disabled=true;button.textContent='Logging in…'}
     const result=password
       ?await supa.auth.signInWithPassword({email,password})
-      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
     if(button){button.disabled=false;button.textContent='Log in'}
     if(result.error){toast(result.error.message);return}
     if(password){
@@ -833,7 +885,7 @@ function bindEvents(){
     if(!email){toast('Enter your email first');document.querySelector('#login-form input[name="email"]')?.focus();return}
     const button=document.getElementById('magic-link-login');
     button.disabled=true;button.textContent='Sending…';
-    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
     button.disabled=false;button.textContent='Send me a magic link';
     toast(error?error.message:'Check your email for the LearnFlow login link.');
   });
@@ -1120,7 +1172,7 @@ function bindEvents(){
     if(button){button.disabled=true;button.textContent='Logging in…'}
     const result=password
       ?await supa.auth.signInWithPassword({email,password})
-      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
     if(button){button.disabled=false;button.textContent='Log in'}
     if(result.error){toast(result.error.message);return}
     if(password){
@@ -1136,7 +1188,7 @@ function bindEvents(){
     if(!email){toast('Enter your email first');document.querySelector('#login-form input[name="email"]')?.focus();return}
     const button=document.getElementById('magic-link-login');
     button.disabled=true;button.textContent='Sending…';
-    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL}});
+    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
     button.disabled=false;button.textContent='Send me a magic link';
     toast(error?error.message:'Check your email for the LearnFlow login link.');
   });
