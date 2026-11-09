@@ -334,3 +334,6 @@ body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.d
 .global-search-result small{font-size:11px;color:var(--muted)}
 @media(max-width:900px){.board-two-up .board-column{width:420px;min-width:420px}}
 @media(max-width:650px){.board-toolbar{align-items:flex-start;flex-direction:column}.board-toolbar .toolbar-right{width:100%;justify-content:flex-start}.board-sort-select{max-width:160px}.board-two-up .board-column{width:390px;min-width:390px}.global-search-modal{padding:19px}}
+
+/* Keep the resource table as the dedicated List view; Kanban remains uncluttered. */
+.board-library-panel:not(.list-view-active){display:none}
