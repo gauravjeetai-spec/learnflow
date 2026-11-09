@@ -885,11 +885,20 @@ if(modalBackdrop)modalBackdrop.onclick=e=>{if(e.target===modalBackdrop)closeModa
   return labels[a.action]||a.action.replaceAll('_',' ');
 }
 function activity(){
-  const learning=activitiesData.map(a=>({type:'learning',occurred_at:a.occurred_at,description:'Logged '+a.duration_minutes+' minutes of '+(resources.find(r=>String(r.id)===String(a.resource_id))?.title||'learning'),detail:a.activity_type}));
-  const audit=auditEvents.map(a=>({type:'audit',occurred_at:a.occurred_at,description:auditDescription(a),detail:a.target_type||'account'}));
+  const actorFor=userId=>{
+    const isCurrent=String(userId||'')===String(user?.id||'');
+    const person=profiles.find(p=>String(p.user_id)===String(userId))||(isCurrent?profile:null);
+    return person?.display_name||person?.full_name||(isCurrent?(user?.email||'You'):'Workspace member');
+  };
+  const learning=activitiesData.map(a=>({type:'learning',user_id:a.user_id||user?.id,occurred_at:a.occurred_at,description:'Logged '+a.duration_minutes+' minutes of '+(resources.find(r=>String(r.id)===String(a.resource_id))?.title||'learning'),detail:a.activity_type}));
+  const audit=auditEvents.map(a=>({type:'audit',user_id:a.user_id,occurred_at:a.occurred_at,description:auditDescription(a),detail:a.target_type||'account'}));
   const all=[...learning,...audit].sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
-  const rows=all.map(x=>'<div class="activity-item"><div class="activity-avatar">'+(x.type==='audit'?'•':'↗')+'</div><div class="activity-copy"><strong>'+esc(x.description)+'</strong><small>'+esc(x.detail||'')+' · '+new Date(x.occurred_at).toLocaleString()+'</small></div></div>').join('');
-  return '<div class="page"><div class="page-heading"><div><div class="eyebrow">Immutable activity history</div><h1>Activity</h1><p>LearnFlow records sign-ins, navigation, button clicks, form submissions, saved changes, moves, and learning sessions. Sensitive form values are not recorded. This history cannot be edited from the app.</p></div><button class="primary-button" id="log-activity">＋ Log learning activity</button></div><section class="panel list-panel"><div class="table-toolbar"><strong>Activity log</strong><span class="stat-meta">'+all.length+' recorded events</span></div><div class="activity-list">'+(rows||'<div class="empty-state"><strong>No activity yet</strong><p>Your learning and workspace actions will appear here.</p></div>')+'</div></section></div>';
+  const rows=all.map(x=>{
+    const actor=actorFor(x.user_id);
+    const initials=actor.split(/\\s+/).filter(Boolean).slice(0,2).map(part=>part[0].toUpperCase()).join('')||'U';
+    return '<div class="activity-item"><div class="activity-avatar">'+(x.type==='audit'?esc(initials):'↗')+'</div><div class="activity-copy"><strong>'+esc(x.description)+'</strong><small><span class="activity-actor">'+esc(actor)+'</span> · '+esc(x.detail||'')+' · '+new Date(x.occurred_at).toLocaleString()+'</small></div></div>';
+  }).join('');
+  return '<div class="page"><div class="page-heading"><div><div class="eyebrow">Immutable activity history</div><h1>Activity</h1><p>See who performed each action, when it happened, and what changed. Sensitive form values are not recorded. This history cannot be edited from the app.</p></div><button class="primary-button" id="log-activity">＋ Log learning activity</button></div><section class="panel list-panel"><div class="table-toolbar"><strong>Activity log</strong><span class="stat-meta">'+all.length+' recorded events</span></div><div class="activity-list">'+(rows||'<div class="empty-state"><strong>No activity yet</strong><p>Your learning and workspace actions will appear here.</p></div>')+'</div></section></div>';
 }
 function analytics(){
  const total=resources.length,completed=resources.filter(r=>Number(r.progress)>=100).length,inProgress=resources.filter(r=>r.column==='in-progress').length;
