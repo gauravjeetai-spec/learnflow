@@ -333,24 +333,24 @@ function loginView(){
   return `<div class="auth-page">
     <div class="auth-card">
       <div class="auth-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
-      <div class="eyebrow">Welcome back</div>
-      <h1>Log in to LearnFlow</h1>
-      <p class="auth-copy">Continue your learning workspace and pick up where you left off.</p>
+      <div class="eyebrow" id="auth-eyebrow">Welcome back</div>
+      <h1 id="auth-title">Log in to LearnFlow</h1>
+      <p class="auth-copy" id="auth-copy">Continue your learning workspace and pick up where you left off.</p>
       <form id="login-form">
         <div class="field">
           <label>Email</label>
           <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
         </div>
         <div class="field">
-          <label>Password <span class="auth-optional">optional</span></label>
-          <input name="password" type="password" autocomplete="current-password" placeholder="Enter your password">
+          <label>Password</label>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
         </div>
         <button class="primary-button auth-submit" type="submit">Log in</button>
       </form>
-      <div class="auth-divider"><span>or</span></div>
-      <button class="secondary-button auth-link-button" id="magic-link-login" type="button">Send me a magic link</button>
+      <div class="auth-divider"><span>new to LearnFlow?</span></div>
+      <button class="secondary-button auth-link-button" id="show-signup" type="button">Create an account</button>
       <button class="auth-back" id="back-to-demo" type="button">← Back to LearnFlow</button>
-      <p class="auth-help">Use your password for immediate sign-in, or request a magic link by email.</p>
+      <p class="auth-help">New accounts start as Learners and are activated by an administrator.</p>
     </div>
   </div>`;
 }
@@ -1217,32 +1217,69 @@ function bindEvents(){
   document.getElementById('login-form')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const f=new FormData(e.target);
-    const email=String(f.get('email')||'').trim();
+    const email=String(f.get('email')||'').trim().toLowerCase();
     const password=String(f.get('password')||'');
-    if(!email)return;
+    if(!email||!password){toast('Enter your email and password');return}
     const button=e.target.querySelector('button[type="submit"]');
     if(button){button.disabled=true;button.textContent='Logging in…'}
-    const result=password
-      ?await supa.auth.signInWithPassword({email,password})
-      :await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
-    if(button){button.disabled=false;button.textContent='Log in'}
-    if(result.error){toast(result.error.message);return}
-    if(password){
-      user=result.data?.user||user;
+    try{
+      const {data,error}=await supa.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      user=data?.user||user;
       await refreshSessionState();
       toast('Signed in successfully.');
-    }else{
-      toast('Check your email for the LearnFlow login link.');
-    }
+    }catch(error){console.error('Login failed:',error);toast(error.message||'Could not log in')}
+    finally{if(button){button.disabled=false;button.textContent='Log in'}}
   });
-  document.getElementById('magic-link-login')?.addEventListener('click',async()=>{
-    const email=String(document.querySelector('#login-form input[name="email"]')?.value||'').trim();
-    if(!email){toast('Enter your email first');document.querySelector('#login-form input[name="email"]')?.focus();return}
-    const button=document.getElementById('magic-link-login');
-    button.disabled=true;button.textContent='Sending…';
-    const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:AUTH_REDIRECT_URL,shouldCreateUser:false}});
-    button.disabled=false;button.textContent='Send me a magic link';
-    toast(error?error.message:'Check your email for the LearnFlow login link.');
+  document.getElementById('show-signup')?.addEventListener('click',()=>{
+    const card=document.querySelector('.auth-card');
+    if(!card)return;
+    card.innerHTML=`<div class="auth-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+      <div class="eyebrow">Start your learning journey</div>
+      <h1>Create your account</h1>
+      <p class="auth-copy">Join LearnFlow and build your personal learning workspace.</p>
+      <form id="signup-form">
+        <div class="field"><label>Your name</label><input name="full_name" type="text" autocomplete="name" placeholder="Your name" required></div>
+        <div class="field"><label>Email</label><input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <div class="field"><label>Password</label><input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required></div>
+        <div class="field"><label>Confirm password</label><input name="confirm_password" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter your password" required></div>
+        <button class="primary-button auth-submit" type="submit">Create account</button>
+      </form>
+      <button class="auth-back" id="show-login" type="button">← Back to log in</button>
+      <p class="auth-help">Every self-registered account is assigned the Learner role and starts pending admin approval.</p>`;
+    document.getElementById('signup-form')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const f=new FormData(e.target);
+      const full_name=String(f.get('full_name')||'').trim();
+      const email=String(f.get('email')||'').trim().toLowerCase();
+      const password=String(f.get('password')||'');
+      const confirmPassword=String(f.get('confirm_password')||'');
+      if(password.length<8){toast('Use a password with at least 8 characters');return}
+      if(password!==confirmPassword){toast('Passwords do not match');return}
+      const button=e.target.querySelector('button[type="submit"]');
+      if(button){button.disabled=true;button.textContent='Creating account…'}
+      try{
+        const {data,error}=await supa.auth.signUp({
+          email,password,
+          options:{emailRedirectTo:AUTH_REDIRECT_URL,data:{full_name}}
+        });
+        if(error)throw error;
+        if(data?.session){
+          user=data.user||null;
+          await refreshSessionState();
+          toast('Account created. Your LearnFlow access is pending admin approval.');
+        }else{
+          card.innerHTML=`<div class="auth-brand"><div class="brand-mark">L</div><span>LearnFlow</span></div>
+            <div class="eyebrow">One last step</div><h1>Check your email</h1>
+            <p class="auth-copy">We sent a confirmation link to <strong>${esc(email)}</strong>. Confirm your email, then wait for an administrator to activate your Learner account.</p>
+            <button class="primary-button auth-submit" id="signup-back-login" type="button">Back to log in</button>
+            <p class="auth-help">If you don't see the email, check your spam folder.</p>`;
+          document.getElementById('signup-back-login')?.addEventListener('click',()=>render());
+        }
+      }catch(error){console.error('Signup failed:',error);toast(error.message||'Could not create account')}
+      finally{const activeButton=document.querySelector('#signup-form button[type="submit"]');if(activeButton){activeButton.disabled=false;activeButton.textContent='Create account'}}
+    });
+    document.getElementById('show-login')?.addEventListener('click',()=>render());
   });
   document.getElementById('back-to-demo')?.addEventListener('click',()=>{
     currentView='overview';
