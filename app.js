@@ -302,7 +302,7 @@ function updateRoleUI(){
   const adminNav=document.getElementById('admin-nav');
   if(adminNav)adminNav.style.display=profile?.role==='admin'&&profile?.access_status==='active'?'flex':'none';
   const canUseMentorship=!!user&&profile?.role==='mentor'&&profile?.access_status==='active';
-  document.querySelectorAll('[data-view="mentorship"]').forEach(nav=>nav.style.display=canUseMentorship?'flex':'none');
+  document.querySelectorAll('[data-view="mentorship"]').forEach(nav=>nav.style.display=canUseMentorship?'':'none');
   if(!canUseMentorship&&currentView==='mentorship')currentView='overview';
   const workspace=document.getElementById('sidebar-workspace');
   if(workspace)workspace.style.display=user?'block':'none';
