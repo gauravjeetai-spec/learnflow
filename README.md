@@ -1,3 +1,8 @@
+### Learning card readability — 2026-11-09
+- Increased resource-card title, metadata, progress, tag, owner, and sharing-control sizes for easier scanning.
+- Improved card padding, spacing, contrast, progress-track thickness, and hover feedback while retaining the private amber and community teal visual states.
+- Added responsive type sizing and reduced-motion support.
+
 ### Resource visibility styling — 2026-11-09
 - Private learning resources use a warm amber/gold badge and left-edge accent; community-published resources use a teal/green badge and accent, preserving LearnFlow blue for primary actions.
 - The distinction appears on Learning Board cards and in List view, including resources published by other workspace members.
