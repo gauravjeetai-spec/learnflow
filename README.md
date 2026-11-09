@@ -72,6 +72,12 @@ The production application is deployed from the GitHub `main` branch through Ver
 - Light mode remains the primary design target. Dark-mode tokens are refined for the shared foundations; a full dark-mode visual QA pass remains a later task.
 - This phase is a visual/UI update only; no database schema or migration changes are required.
 
+### Fixed desktop navigation — 2026-11-09
+- Desktop app shell is constrained to the viewport height. The left navigation remains stationary while the main workspace scrolls independently.
+- The sidebar can scroll internally only if its own contents exceed the viewport height; this prevents navigation items from becoming inaccessible on shorter screens.
+- Mobile behaviour is unchanged: the desktop sidebar remains hidden and the page uses its normal mobile scrolling and bottom navigation.
+- No application data, authentication, Supabase schema, or feature workflows are changed.
+
 ## Build status / source of truth
 
 This README is the canonical project record for LearnFlow's implemented architecture and verified progress. After each meaningful, working milestone, update this section and the relevant architecture notes before moving to the next feature.
