@@ -439,11 +439,27 @@ async function renderMentorshipData(){
   const pendingForMentor=rels.filter(r=>r.mentor_id===user.id&&['requested','offered'].includes(r.status));
   const awaitingConsent=rels.filter(r=>r.learner_id===user.id&&r.status==='accepted');
   const active=rels.filter(r=>(r.mentor_id===user.id||r.learner_id===user.id)&&r.status==='active');
+  const mentorSnapshots={};
+  if(profile?.role==='mentor'){
+    for(const rel of active.filter(r=>r.mentor_id===user.id)){
+      const learnerId=rel.learner_id;
+      const [res,goals]=await Promise.all([
+        supa.from('resources').select('id,title,status,progress').eq('user_id',learnerId).order('created_at',{ascending:false}).limit(8),
+        supa.from('goals').select('id,title,status,priority').eq('user_id',learnerId).order('created_at',{ascending:true}).limit(8)
+      ]);
+      mentorSnapshots[rel.id]={resources:res.data||[],goals:goals.data||[]};
+    }
+  }
   const mentorOptions=mentors.map(m=>'<option value="'+m.user_id+'">'+esc(m.display_name||'Mentor')+'</option>').join('');
   const requestForm=profile?.role==='learner'?'<section class="panel list-panel"><div class="panel-header"><div><h3>Find a mentor</h3><p class="settings-copy">Send a request. Your information stays private until you approve access.</p></div></div><form id="mentor-request-form" class="launch-inline-form"><div class="field"><label>Available mentor</label><select name="mentorId" required><option value="">Choose a mentor</option>'+mentorOptions+'</select></div><button class="primary-button" type="submit" '+(!mentors.length?'disabled':'')+'>Request mentor</button></form></section>':'';
   const pendingHtml=pendingForMentor.length?'<section class="panel list-panel"><h3>Mentoring requests</h3>'+pendingForMentor.map(r=>'<div class="mentor-rel-row"><div><strong>'+esc(r.learner?.display_name||'Learner')+'</strong><p class="settings-copy">'+(r.status==='offered'?'Admin proposed this mentoring relationship':'Learner requested your guidance')+'</p></div><div class="button-row"><button class="primary-button" data-mentor-response="'+r.id+'" data-accept="true">Accept</button><button class="secondary-button" data-mentor-response="'+r.id+'" data-accept="false">Decline</button></div></div>').join('')+'</section>':'';
   const consentHtml=awaitingConsent.length?'<section class="panel list-panel"><h3>Review mentor access</h3><p class="settings-copy">Your mentor has accepted. Choose exactly what they may view before activating access.</p>'+awaitingConsent.map(r=>'<form class="mentor-consent-form" data-mentor-consent="'+r.id+'"><strong>'+esc(r.mentor?.display_name||'Mentor')+'</strong><div class="mentor-permission-grid">'+[['resources','Learning resources'],['goals','Goals'],['skills','Skills'],['sprints','Sprints'],['activities','Learning activity'],['analytics','Analytics']].map(([k,label])=>'<label><input type="checkbox" name="permission" value="'+k+'" '+(['resources','goals','skills','sprints','activities'].includes(k)?'checked':'')+'> '+label+'</label>').join('')+'</div><button class="primary-button" type="submit">Approve selected access</button></form>').join('')+'</section>':'';
-  const activeHtml=active.length?'<section class="panel list-panel"><h3>Active mentoring relationships</h3>'+active.map(r=>'<div class="mentor-rel-row"><div><strong>'+(r.learner_id===user.id?esc(r.mentor?.display_name||'Mentor'):'Learner: '+esc(r.learner?.display_name||'Learner'))+'</strong><p class="settings-copy">Access is active and controlled by learner consent.</p></div>'+(r.learner_id===user.id?'<button class="danger-button" data-mentor-revoke="'+r.id+'">Revoke access</button>':'<span class="status-pill done">Consented access</span>')+'</div>').join('')+'</section>':'';
+  const activeHtml=active.length?'<section class="panel list-panel"><h3>Active mentoring relationships</h3>'+active.map(r=>{
+    const isLearner=r.learner_id===user.id;
+    const snapshot=mentorSnapshots[r.id]||{resources:[],goals:[]};
+    const preview=!isLearner?'<div class="mentor-learner-preview"><strong>Shared learning resources</strong><ul>'+(snapshot.resources.map(x=>'<li>'+esc(x.title)+' · '+esc(x.status)+' · '+Number(x.progress||0)+'%</li>').join('')||'<li>No shared resources yet.</li>')+'</ul><strong>Shared goals</strong><ul>'+(snapshot.goals.map(x=>'<li>'+esc(x.title)+'</li>').join('')||'<li>No shared goals yet.</li>')+'</ul></div>':'';
+    return '<div class="mentor-rel-row"><div><strong>'+(isLearner?esc(r.mentor?.display_name||'Mentor'):'Learner: '+esc(r.learner?.display_name||'Learner'))+'</strong><p class="settings-copy">Access is active and controlled by learner consent.</p>'+preview+'</div>'+(isLearner?'<button class="danger-button" data-mentor-revoke="'+r.id+'">Revoke access</button>':'<span class="status-pill done">Consented access</span>')+'</div>';
+  }).join('')+'</section>':'';
   const none=(!pendingForMentor.length&&!awaitingConsent.length&&!active.length)?'<section class="panel list-panel"><div class="empty-state"><strong>No mentoring relationships yet</strong><p>When a learner requests you or an administrator sends an offer, it will appear here.</p></div></section>':'';
   host.innerHTML=requestForm+pendingHtml+consentHtml+activeHtml+none;
   host.querySelector('#mentor-request-form')?.addEventListener('submit',async e=>{e.preventDefault();const mentorId=new FormData(e.target).get('mentorId');const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'request',mentorId}});toast(error?.message||data?.error||data?.message||'Request sent');await renderMentorshipData()});
