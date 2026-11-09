@@ -301,6 +301,9 @@ function updateAuthButton(){const b=document.getElementById('auth-button');if(b)
 function updateRoleUI(){
   const adminNav=document.getElementById('admin-nav');
   if(adminNav)adminNav.style.display=profile?.role==='admin'&&profile?.access_status==='active'?'flex':'none';
+  const canUseMentorship=!!user&&profile?.role==='mentor'&&profile?.access_status==='active';
+  document.querySelectorAll('[data-view="mentorship"]').forEach(nav=>nav.style.display=canUseMentorship?'flex':'none');
+  if(!canUseMentorship&&currentView==='mentorship')currentView='overview';
   const workspace=document.getElementById('sidebar-workspace');
   if(workspace)workspace.style.display=user?'block':'none';
   const roleLabel=document.getElementById('user-role-label');
@@ -320,7 +323,7 @@ async function requestAccountDeletion(){if(!user||!supa)return;const {data:exist
   render();
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;if(view==='mentorship'&&(!user||profile?.access_status!=='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view==='community'?'Community':view[0].toUpperCase()+view.slice(1);render()}
+function setView(view){if(view==='admin'&&!(profile?.role==='admin'&&profile?.access_status==='active'))return;if(view==='settings'&&!user)return;if(view==='mentorship'&&(!user||profile?.role!=='mentor'||profile?.access_status!=='active'))return;currentView=view;document.querySelectorAll('.nav-item[data-view],.mobile-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('breadcrumb-current').textContent=view==='board'?'Learning Board':view==='community'?'Community':view[0].toUpperCase()+view.slice(1);render()}
 function resourceCard(r){
   const canShare=!!user&&String(r.user_id||user.id)===String(user.id);
   const shared=window.communityIsPublished?.(r.id);
@@ -428,14 +431,11 @@ function mentorship(){
 }
 async function renderMentorshipData(){
   const host=document.getElementById('mentorship-data');
-  if(!host||!supa||!user||profile?.access_status!=='active')return;
-  const [relResult,mentorResult]=await Promise.all([
-    supa.functions.invoke('learnflow-admin',{body:{action:'list_relationships'}}),
-    profile?.role==='learner'?supa.functions.invoke('learnflow-admin',{body:{action:'list_mentors'}}):Promise.resolve({data:{mentors:[]},error:null})
-  ]);
+  if(!host||!supa||!user||profile?.role!=='mentor'||profile?.access_status!=='active')return;
+  const relResult=await supa.functions.invoke('learnflow-admin',{body:{action:'list_relationships'}});
   if(!document.getElementById('mentorship-data'))return;
   if(relResult.error||relResult.data?.error){host.innerHTML='<section class="panel list-panel"><p>Could not load mentoring relationships: '+esc(relResult.data?.error||relResult.error?.message||'Unknown error')+'</p></section>';return}
-  const rels=relResult.data?.relationships||[], mentors=mentorResult.data?.mentors||[];
+  const rels=relResult.data?.relationships||[];
   const pendingForMentor=rels.filter(r=>r.mentor_id===user.id&&['requested','offered'].includes(r.status));
   const awaitingConsent=rels.filter(r=>r.learner_id===user.id&&r.status==='accepted');
   const active=rels.filter(r=>(r.mentor_id===user.id||r.learner_id===user.id)&&r.status==='active');
@@ -448,8 +448,7 @@ async function renderMentorshipData(){
       else mentorSnapshots[rel.id]=data?.workspace||{resources:[],goals:[]};
     }
   }
-  const mentorOptions=mentors.map(m=>'<option value="'+m.user_id+'">'+esc(m.display_name||'Mentor')+'</option>').join('');
-  const requestForm=profile?.role==='learner'?'<section class="panel list-panel"><div class="panel-header"><div><h3>Find a mentor</h3><p class="settings-copy">Send a request. Your information stays private until you approve access.</p></div></div><form id="mentor-request-form" class="launch-inline-form"><div class="field"><label>Available mentor</label><select name="mentorId" required><option value="">Choose a mentor</option>'+mentorOptions+'</select></div><button class="primary-button" type="submit" '+(!mentors.length?'disabled':'')+'>Request mentor</button></form></section>':'';
+  const requestForm='';
   const pendingHtml=pendingForMentor.length?'<section class="panel list-panel"><h3>Mentoring requests</h3>'+pendingForMentor.map(r=>'<div class="mentor-rel-row"><div><strong>'+esc(r.learner?.display_name||'Learner')+'</strong><p class="settings-copy">'+(r.status==='offered'?'Admin proposed this mentoring relationship':'Learner requested your guidance')+'</p></div><div class="button-row"><button class="primary-button" data-mentor-response="'+r.id+'" data-accept="true">Accept</button><button class="secondary-button" data-mentor-response="'+r.id+'" data-accept="false">Decline</button></div></div>').join('')+'</section>':'';
   const consentHtml=awaitingConsent.length?'<section class="panel list-panel"><h3>Review mentor access</h3><p class="settings-copy">Your mentor has accepted. Choose exactly what they may view before activating access.</p>'+awaitingConsent.map(r=>'<form class="mentor-consent-form" data-mentor-consent="'+r.id+'"><strong>'+esc(r.mentor?.display_name||'Mentor')+'</strong><div class="mentor-permission-grid">'+[['resources','Learning resources'],['goals','Goals'],['skills','Skills'],['sprints','Sprints'],['activities','Learning activity']].map(([k,label])=>'<label><input type="checkbox" name="permission" value="'+k+'" '+(['resources','goals','skills','sprints','activities'].includes(k)?'checked':'')+'> '+label+'</label>').join('')+'</div><button class="primary-button" type="submit">Approve selected access</button></form>').join('')+'</section>':'';
   const activeHtml=active.length?'<section class="panel list-panel"><h3>Active mentoring relationships</h3>'+active.map(r=>{
@@ -460,7 +459,6 @@ async function renderMentorshipData(){
   }).join('')+'</section>':'';
   const none=(!pendingForMentor.length&&!awaitingConsent.length&&!active.length)?'<section class="panel list-panel"><div class="empty-state"><strong>No mentoring relationships yet</strong><p>When a learner requests you or an administrator sends an offer, it will appear here.</p></div></section>':'';
   host.innerHTML=requestForm+pendingHtml+consentHtml+activeHtml+none;
-  host.querySelector('#mentor-request-form')?.addEventListener('submit',async e=>{e.preventDefault();const mentorId=new FormData(e.target).get('mentorId');const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'request',mentorId}});toast(error?.message||data?.error||data?.message||'Request sent');await renderMentorshipData()});
   host.querySelectorAll('[data-mentor-response]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'respond',relationshipId:b.dataset.mentorResponse,accept:b.dataset.accept==='true'}});toast(error?.message||data?.error||data?.message||'Updated');await renderMentorshipData()}));
   host.querySelectorAll('[data-mentor-consent]').forEach(form=>form.addEventListener('submit',async e=>{e.preventDefault();const permissions=[...form.querySelectorAll('input[name="permission"]:checked')].map(x=>x.value);const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'consent',relationshipId:form.dataset.mentorConsent,permissions}});toast(error?.message||data?.error||data?.message||'Consent saved');await renderMentorshipData()}));
   host.querySelectorAll('[data-mentor-revoke]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Revoke this mentor’s access to your learning information?'))return;const {data,error}=await supa.functions.invoke('learnflow-admin',{body:{action:'mentor_action',kind:'revoke',relationshipId:b.dataset.mentorRevoke}});toast(error?.message||data?.error||data?.message||'Access revoked');await renderMentorshipData()}));
