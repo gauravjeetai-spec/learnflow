@@ -360,3 +360,43 @@ body.dark .attention-item.warning{background:#3b3025;border-color:#665039}body.d
 .visibility-inline.private{color:#94601f}
 .visibility-inline.community{color:#18745f}
 @media(prefers-reduced-motion:reduce){.course-card{transition:none}}
+
+
+/* Learning card readability pass — larger type, clearer hierarchy, calmer spacing. */
+.course-card{padding:18px 17px 16px;border-radius:14px;box-shadow:0 5px 18px rgba(28,42,66,.055)}
+.course-card .card-top{align-items:center;gap:8px;margin-bottom:12px;min-height:22px}
+.course-card .type-label{font-size:10px;line-height:1.4;letter-spacing:.075em;color:#64748b}
+.course-card .visibility-badge{font-size:10px;padding:5px 9px;margin-right:1px}
+.course-card h4{font-size:15px;line-height:1.4;font-weight:700;letter-spacing:-.018em;margin:0 0 5px;color:var(--text);overflow-wrap:anywhere}
+.course-card .provider{font-size:12px;line-height:1.5;margin:0 0 15px;color:#64748b}
+.course-card .card-progress{margin:0 0 13px}
+.course-card .progress-caption{font-size:11px;line-height:1.4;margin-bottom:7px;color:#64748b}
+.course-card .progress-caption b{font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.course-card .card-progress .progress-track{height:7px;border-radius:99px;background:#e9edf3;overflow:hidden}
+.course-card .card-progress .progress-fill{border-radius:99px}
+.course-card .tag-row{gap:6px;margin:0 0 15px}
+.course-card .tag{font-size:10px;line-height:1.35;padding:5px 8px;border-radius:6px}
+.course-card .card-footer{gap:9px;min-height:30px;font-size:11px;line-height:1.4}
+.course-card .due{font-size:11px;gap:5px;white-space:normal}
+.course-card .owner-badge{gap:7px;max-width:48%}
+.course-card .owner-badge .avatar{width:27px;height:27px;font-size:11px}
+.course-card .owner-name{font-size:11px;line-height:1.3}
+.course-card .resource-share-row{margin-top:13px;padding-top:11px;gap:10px;min-height:42px}
+.course-card .share-state{font-size:11px;font-weight:600;letter-spacing:.005em}
+.course-card .resource-share-row .filter-button{font-size:11px;font-weight:650;padding:8px 13px;min-height:34px;border-radius:9px}
+.course-card.is-private-card{background:linear-gradient(145deg,rgba(250,239,220,.24),var(--surface) 55%)}
+.course-card.is-community-card{background:linear-gradient(145deg,rgba(220,243,237,.30),var(--surface) 55%)}
+.course-card:hover{box-shadow:0 9px 24px rgba(28,42,66,.09);transform:translateY(-1px)}
+@media(max-width:1100px){
+ .course-card{padding:15px 14px}
+ .course-card h4{font-size:14px}
+ .course-card .provider{font-size:11px}
+}
+@media(max-width:700px){
+ .course-card{padding:16px 15px}
+ .course-card .type-label{font-size:9px}
+ .course-card h4{font-size:15px}
+ .course-card .provider{font-size:12px}
+ .course-card .card-footer,.course-card .due,.course-card .owner-name{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.course-card:hover{transform:none}}
